@@ -25,7 +25,7 @@ class TaskQueue{
         (_impl.front())();
         _impl.pop();
       }
-    } 
+    }
   private:
     Queue _impl;
 };
@@ -40,8 +40,10 @@ class Executor{
     Executor(const Executor &)= delete;
     Executor(Executor &&)= delete;
     //constructor
-    Executor():_thread([this](){run();}){}
-    
+    Executor(): running(true),
+                _thread([this](){run();}){
+               }
+
     void join();
     template <typename F, typename ...Args>
     auto task(F && f, Args && ...args)->std::future<decltype(f(args...))>{
@@ -52,15 +54,18 @@ class Executor{
           return true;
       });
       cv.notify_one();
-      return task->get_future(); 
+      return task->get_future();
     }
+    virtual ~Executor();
 
   private:
     void run();
     std::condition_variable cv;
     std::mutex cv_m;
-    std::thread  _thread;
     Queue _task_list;
+    volatile bool running;
+    volatile bool stoped;
+    std::thread  _thread;
 };
 
 #endif
