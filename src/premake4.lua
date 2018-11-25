@@ -30,4 +30,9 @@ excludes {"cpp/main.cpp"}
 buildoptions { "-std=c++14", "-Wall" }
 links("pthread")
 links("gtest")
+
+
+configuration "Debug"
+defines { "DEBUG" }
+flags { "Symbols" }
 targetdir "../install"
