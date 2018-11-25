@@ -21,7 +21,7 @@ void f(A a ){
 int main(){
   Executor e;
   std::future<void> res;
-  for(int i=9; i< 10; ++i){
+  for(int i=0; i< 10; ++i){
     res = e.task(f,A(i));
   }
   res.wait();

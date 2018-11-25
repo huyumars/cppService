@@ -64,7 +64,6 @@ class Executor{
     std::mutex cv_m;
     Queue _task_list;
     volatile bool running;
-    volatile bool stoped;
     std::thread  _thread;
 };
 

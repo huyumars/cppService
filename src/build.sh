@@ -1,3 +1,4 @@
 premake4 gmake
 cd ../build
-make
+make cppservice
+make service-gtest
