@@ -10,6 +10,7 @@
 #include<shared_mutex>
 #include<memory>
 #include<future>
+#include<functional>
 
 class TaskQueue{
   public:
