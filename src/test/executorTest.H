@@ -39,8 +39,7 @@ T identity(T a ){
   return a;
 }
 
-TEST_F(ExecutorTest, returnValueTest)
-{
+void _returnvalueTest(){
   Executor e;
   std::vector<std::future<int>> res;
   for(int i=0; i< 10; ++i){
@@ -51,6 +50,14 @@ TEST_F(ExecutorTest, returnValueTest)
     r.wait();
     ASSERT_EQ(r.get(),i);
     i++;
+  }
+}
+
+
+TEST_F(ExecutorTest, returnValueTest)
+{
+  for(int i = 0; i<20; ++i){
+    _returnvalueTest();
   }
 }
 

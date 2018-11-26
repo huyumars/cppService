@@ -11,6 +11,7 @@
 #include<memory>
 #include<future>
 #include<functional>
+#include<atomic>
 
 class Executor{
   public:
@@ -43,7 +44,7 @@ class Executor{
     std::condition_variable cv;
     std::mutex cv_m;
     Queue _task_list;
-    volatile bool running;
+    std::atomic_bool running;
     std::thread  _thread;
 };
 
