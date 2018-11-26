@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "executorTest.H"
+#include "threadSafeTest.H"
 
 int main(int argc, char **argv)
 {
