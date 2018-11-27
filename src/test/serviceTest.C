@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
+#include "logTest.H"
 #include "executorTest.H"
 #include "threadSafeTest.H"
-#include "logTest.H"
 
 int main(int argc, char **argv)
 {

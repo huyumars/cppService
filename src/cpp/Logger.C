@@ -11,9 +11,11 @@ void LogMsg::Log(const std::string & msg_,
   Logger::send(msgPtr);
 }
 
+
+
 Logger::Logger():_running(true), _thread([this]{ run(); }){ }
 
-void Logger::addDest(const LogDest & d){
+void Logger::_addDest(LogDest::Ptr d){
   _dests.push_back(d);
 }
 
@@ -21,10 +23,10 @@ void Logger::run(){
   do{
     Logger::MsgQueue::QueuePtr queuePtr; 
     _queue.getQueue(queuePtr);
-    for(LogDest & dest : _dests){
+    for(auto destPtr : _dests){
       if(queuePtr){
         while(queuePtr->size()){
-          dest.dispatch(queuePtr->front());
+          destPtr->dispatch(queuePtr->front());
           queuePtr->pop();
         }
       }
@@ -34,11 +36,20 @@ void Logger::run(){
 
 Logger::~Logger(){
   _running = false;
+  _queue.stop();
   join();
 }
 
 void Logger::send(LogMsg::Ptr msgPtr){
   Singleton<Logger>::instance()._sendAync(msgPtr);
+}
+
+
+void Logger::addDest(LogDest::Type type){
+  Singleton<Logger>::instance()._addDest(std::make_shared<LogDest>(type));
+}
+void Logger::addDest(const std::string & fileName){
+  Singleton<Logger>::instance()._addDest(std::make_shared<LogDest>(fileName));
 }
 
 
@@ -64,6 +75,14 @@ LogDest::LogDest(Type type){
       };
       break;
   }
+}
+
+LogDest::LogDest(const std::string file)
+{
+  _logfile = std::ofstream(file,std::ofstream::out);
+  _dispatchFunctor = [this](LogMsg::Ptr ptr){
+    console(_logfile,ptr);
+  };
 }
 
 std::ostream & operator<<(std::ostream &os, const LogType& level){

@@ -6,6 +6,7 @@
 #include <thread>
 #include <unordered_map>
 #include <atomic>
+#include <fstream>
 
 #define LOGFUNC(_str_, _level_)  \
     LogMsg::Log(_str_,__LINE__ , __FILE__,_level_)
@@ -66,16 +67,20 @@ std::ostream & operator<<(std::ostream &, const LogType&);
 
 class LogDest {
   public:
+    typedef std::shared_ptr<LogDest>  Ptr;
     enum class Type{
+      file,
       stdout,
       stderr
     };
     LogDest(Type type);
+    LogDest(const std::string file);
     void set_log_level(LogType level_){_log_level =  level_;}
     void dispatch(LogMsg::Ptr msgPtr) {_dispatchFunctor(msgPtr);};
   private:
     LogType _log_level;
     std::function<void(LogMsg::Ptr)>  _dispatchFunctor;
+    std::ofstream  _logfile;
 };
 
 class Logger {
@@ -87,18 +92,20 @@ class Logger {
     Logger();
     virtual ~Logger();
 
-    void addDest(const LogDest & d);
     void join(){_thread.join();}
 
     static void send(LogMsg::Ptr logMsg);
+    static void addDest(LogDest::Type);
+    static void addDest(const std::string &);
 
   private:
     void run();
+    void _addDest(LogDest::Ptr);
     void _sendAync(LogMsg::Ptr);
     std::mutex _map_m;
     MsgQueue           _queue;
     std::atomic_bool  _running;
-    std::vector<LogDest>  _dests;
+    std::vector<LogDest::Ptr>  _dests;
     std::thread  _thread;
 };
 

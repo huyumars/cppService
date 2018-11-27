@@ -19,6 +19,6 @@ Executor::~Executor(){
   _task_list.put([this](){
       running = false;
       return true;
-      });
+  });
   join();
 }

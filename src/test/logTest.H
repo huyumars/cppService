@@ -13,7 +13,7 @@ class LoggerTest:public ::testing::Test{};
 
 
 TEST_F(LoggerTest,  infoTest){
-  Singleton<Logger>::instance().addDest(LogDest(LogDest::Type::stdout));
+  Logger::addDest("/var/tmp/log.log");
   LOGINFO("hello world");
 }
 
