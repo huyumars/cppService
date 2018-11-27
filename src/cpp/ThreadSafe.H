@@ -4,6 +4,54 @@
 
 #include <queue>
 #include <shared_mutex>
+#include <condition_variable>
+#include <atomic>
+
+//product consume queue
+template<typename T>
+class PCQueue{
+  public:
+    typedef std::queue<T>  QueueType;
+    typedef std::shared_ptr<QueueType>  QueuePtr;
+
+
+    PCQueue():running(true){}
+    void put(const T &t){
+      std::unique_lock<std::mutex> lock(mutex);
+      _impl.push(t);
+      lock.unlock();
+      cv.notify_all();
+    }
+    void getQueue(QueuePtr &  queuePtr_){
+      queuePtr_ = std::make_shared<QueueType>();
+      std::unique_lock<std::mutex> lock(mutex);
+      while(running && _impl.empty()){
+        cv.wait(lock);
+      }
+      queuePtr_->swap(_impl);
+    }
+    T get(){
+      std::unique_lock<std::mutex> lock(mutex);
+      while(running && _impl.empty()){
+        cv.wait(lock);
+      }
+      auto t = _impl.front();
+      _impl.pop();
+      return t;
+    }
+    void stop(){
+      running = false;
+      cv.notify_all();
+    }
+    ~PCQueue(){
+      stop();
+    }
+  private:
+    QueueType      _impl;
+    std::mutex    mutex;
+    std::condition_variable cv;
+    std::atomic_bool running;
+};
 
 template<typename T>
 class SafeQueue{

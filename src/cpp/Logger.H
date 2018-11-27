@@ -4,6 +4,8 @@
 #include "ThreadSafe.H"
 #include <iostream>
 #include <thread>
+#include <unordered_map>
+#include <atomic>
 
 #define LOGFUNC(_str_, _level_)  \
     LogMsg::Log(_str_,__LINE__ , __FILE__,_level_)
@@ -42,6 +44,7 @@ class LogMsg {
            ):_msg(msg_),_logLevel(level_),_file(file),_line(line){
        _thread_id = std::this_thread::get_id(); 
     };
+    std::thread::id thread_id() const {return _thread_id;};
     static void Log(const std::string & msg_,
                     int                line_,
                     const std::string & file_,
@@ -60,10 +63,43 @@ class LogMsg {
 std::ostream & operator<<(std::ostream & os, const LogMsg &);
 std::ostream & operator<<(std::ostream &, const LogType&);
 
+
+class LogDest {
+  public:
+    enum class Type{
+      stdout,
+      stderr
+    };
+    LogDest(Type type);
+    void set_log_level(LogType level_){_log_level =  level_;}
+    void dispatch(LogMsg::Ptr msgPtr) {_dispatchFunctor(msgPtr);};
+  private:
+    LogType _log_level;
+    std::function<void(LogMsg::Ptr)>  _dispatchFunctor;
+};
+
 class Logger {
   public:
+    typedef PCQueue<LogMsg::Ptr>        MsgQueue;
+
+    Logger(const Logger & ) = delete;
+    Logger(Logger && ) = delete;
+    Logger();
+    virtual ~Logger();
+
+    void addDest(const LogDest & d);
+    void join(){_thread.join();}
+
     static void send(LogMsg::Ptr logMsg);
+
   private:
+    void run();
+    void _sendAync(LogMsg::Ptr);
+    std::mutex _map_m;
+    MsgQueue           _queue;
+    std::atomic_bool  _running;
+    std::vector<LogDest>  _dests;
+    std::thread  _thread;
 };
 
 
