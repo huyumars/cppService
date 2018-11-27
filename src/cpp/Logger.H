@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <atomic>
 #include <fstream>
+#include <functional>
 
 #define LOGFUNC(_str_, _level_)  \
     LogMsg::Log(_str_,__LINE__ , __FILE__,_level_)
@@ -34,6 +35,36 @@ int operator>(LogType a, LogType b){
   return static_cast<int>(a)>static_cast<int>(b);
 }
 */
+
+//support LogInfo <<"hello"<<i<<"world" format
+class LogStream;
+
+class LogStream : public std::ostream{
+  public:
+    LogStream(){};
+    void set(int line, const std::string & fileName, LogType _level);
+  private:
+    int _line;
+    std::string _fileName;
+    LogType _level;
+
+};
+class LogObject {
+  typedef std::thread::id   threadKey;
+  typedef std::shared_ptr<LogStream>   StreamPtr;
+  typedef std::unordered_map<threadKey,StreamPtr>   StreamMap;
+  public:
+    static LogStream & fastLogging(int line, const std::string & fileName, LogType _level);
+  private:
+    LogStream & getStream (){
+      threadKey threadid = std::this_thread::get_id();
+      if(_map.find(threadid)==_map.end()){
+        _map[threadid] = std::make_shared<LogStream>();
+      }
+      return *_map[threadid];
+    };
+    StreamMap  _map;
+};
 
 class LogMsg {
   public:

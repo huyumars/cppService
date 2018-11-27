@@ -3,6 +3,7 @@
 
 #include "ThreadSafe.H"
 #include <memory>
+#include <functional>
 
 
 class TaskQueue{
