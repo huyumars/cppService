@@ -7,9 +7,7 @@ void Executor::join(){
 
 void Executor::run(){
   while(running){
-    std::unique_lock<std::mutex> lock(cv_m);
-    cv.wait(lock,[this]{return !running || !_task_list.empty();});
-    _task_list.apply();
+    _task_list.get()();
   }
 }
 
@@ -18,8 +16,9 @@ Executor::Executor():running(true),
                      }
 
 Executor::~Executor(){
-  running = false;
-  //without notify, will not exit forever
-  cv.notify_one();
+  _task_list.put([this](){
+      running = false;
+      return true;
+      });
   join();
 }

@@ -15,9 +15,9 @@
 
 class Executor{
   public:
-    typedef TaskQueue Queue;
-    typedef Queue::Task Task;
-    typedef Queue::TaskPtr TaskPtr;
+    typedef std::function<bool()> Task;
+    typedef PCQueue<Task> Queue;
+    typedef std::shared_ptr<Task> TaskPtr;
 
     Executor(const Executor &)= delete;
     Executor(Executor &&)= delete;
@@ -31,7 +31,7 @@ class Executor{
       auto task =
         std::make_shared<std::packaged_task<ResType()>>
         (std::bind(std::forward<F>(f),std::forward<Args>(args)...));
-      _task_list.push([task]()->bool{
+      _task_list.put([task]()->bool{
           (*task)();
           return true;
       });
