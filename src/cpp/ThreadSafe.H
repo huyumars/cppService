@@ -93,4 +93,22 @@ class Singleton{
     ~Singleton() = default;
 };
 
+
+template <class T>
+class ThreadLocal{};
+
+
+template <class T>
+class Singleton<ThreadLocal<T>>{
+  public:
+    static T& instance(){
+      thread_local static T _inst;
+      return _inst;
+    }
+    Singleton(const Singleton &)= delete;
+    Singleton(Singleton && )=delete;
+    Singleton() = default;
+
+};
+
 #endif

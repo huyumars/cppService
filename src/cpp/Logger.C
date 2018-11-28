@@ -1,13 +1,14 @@
 #include "Logger.H"
+#include <sstream>
 
 
 
 
-void LogMsg::Log(const std::string & msg_,
+void Logger::send(const std::string & msg_,
                     int  line_,
                     const std::string & file_,
                     LogType level_){
-  Ptr msgPtr = std::make_shared<LogMsg>(msg_,line_,file_,level_);
+  LogMsg::Ptr msgPtr = std::make_shared<LogMsg>(msg_,line_,file_,level_);
   Logger::send(msgPtr);
 }
 
@@ -114,14 +115,27 @@ std::ostream & operator<<(std::ostream & os, const LogMsg &msg){
 
 
 
-void LogObject::set(int line_, const std::string & fileName_, LogType level_) {
+void LogStream::set(int line_, const std::string & fileName_, LogType level_) {
+  //clean all
+  str("");
   _line = line_;
   _fileName = fileName_;
   _level = level_;
 }
 
-LogStream & LogObject::fastLogging(int line, const std::string & fileName, LogType _level){
-   //LogStream & logstream = Singleton<LogObject>::instance().getStream();
-   //logstream.set(line,fileName,_level);
-   //return logstream;
+LogStream & LogStream::startLogging(int line, const std::string & fileName, LogType _level){
+   LogStream & logstream = Singleton<ThreadLocal<LogStream>>::instance();
+   logstream.set(line,fileName,_level);
+   return logstream;
 }
+
+LogStream & operator <<(std::ostream& os, void(*sendFunc)(LogStream &)){
+  //it should be LogStream
+  LogStream &ls = dynamic_cast<LogStream &>(os); 
+  sendFunc(ls);
+  return ls;
+}
+void _logStream_sendfunc(LogStream & logstream){
+  Logger::send(logstream.str(),logstream.line(), logstream.fileName(), logstream.type());
+}
+
