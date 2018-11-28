@@ -22,6 +22,12 @@ class PCQueue{
       lock.unlock();
       cv.notify_all();
     }
+    void put(T &&t){
+      std::unique_lock<std::mutex> lock(mutex);
+      _impl.push(std::move(t));
+      lock.unlock();
+      cv.notify_all();
+    }
     void getQueue(QueuePtr &  queuePtr_){
       queuePtr_ = std::make_shared<QueueType>();
       std::unique_lock<std::mutex> lock(mutex);

@@ -8,26 +8,25 @@ void Logger::send(const std::string & msg_,
                     int  line_,
                     const std::string & file_,
                     LogType level_){
-  LogMsg::Ptr msgPtr = std::make_shared<LogMsg>(msg_,line_,file_,level_);
-  Logger::send(msgPtr);
+  Logger::send( std::make_unique<LogMsg>(msg_,line_,file_,level_));
 }
 
 
 
 Logger::Logger():_running(true), _thread([this]{ run(); }){ }
 
-void Logger::_addDest(LogDest::Ptr d){
-  _dests.push_back(d);
+void Logger::_addDest(LogDest::UPtr d){
+  _dests.push_back(std::move(d));
 }
 
 void Logger::run(){
   do{
     Logger::MsgQueue::QueuePtr queuePtr; 
     _queue.getQueue(queuePtr);
-    for(auto destPtr : _dests){
+    for(LogDest::UPtr &destPtr : _dests){
       if(queuePtr){
         while(queuePtr->size()){
-          destPtr->dispatch(queuePtr->front());
+          destPtr->dispatch(std::move(queuePtr->front()));
           queuePtr->pop();
         }
       }
@@ -41,38 +40,38 @@ Logger::~Logger(){
   join();
 }
 
-void Logger::send(LogMsg::Ptr msgPtr){
-  Singleton<Logger>::instance()._sendAync(msgPtr);
+void Logger::send(LogMsg::UPtr msgPtr){
+  Singleton<Logger>::instance()._sendAync(std::move(msgPtr));
 }
 
 
 void Logger::addDest(LogDest::Type type){
-  Singleton<Logger>::instance()._addDest(std::make_shared<LogDest>(type));
+  Singleton<Logger>::instance()._addDest(std::make_unique<LogDest>(type));
 }
 void Logger::addDest(const std::string & fileName){
-  Singleton<Logger>::instance()._addDest(std::make_shared<LogDest>(fileName));
+  Singleton<Logger>::instance()._addDest(std::make_unique<LogDest>(fileName));
 }
 
 
-void Logger::_sendAync(LogMsg::Ptr msgPtr){
-  _queue.put(msgPtr);
+void Logger::_sendAync(LogMsg::UPtr msgPtr){
+  _queue.put(std::move(msgPtr));
 }
 
-void console(std::ostream& os, LogMsg::Ptr msgPtr){
+void console(std::ostream& os, LogMsg::UPtr msgPtr){
   if(msgPtr) os<<(*msgPtr);
 }
 
 LogDest::LogDest(Type type){
   switch(type){
     case Type::stderr:
-      _dispatchFunctor = [](LogMsg::Ptr ptr){
-        console(std::cerr, ptr);
+      _dispatchFunctor = [](LogMsg::UPtr ptr){
+        console(std::cerr, std::move(ptr));
       };
       break;
     case Type::stdout:
     default:
-      _dispatchFunctor = [](LogMsg::Ptr ptr){
-        console(std::cout, ptr);
+      _dispatchFunctor = [](LogMsg::UPtr ptr){
+        console(std::cout, std::move(ptr));
       };
       break;
   }
@@ -81,8 +80,8 @@ LogDest::LogDest(Type type){
 LogDest::LogDest(const std::string file)
 {
   _logfile = std::ofstream(file,std::ofstream::out);
-  _dispatchFunctor = [this](LogMsg::Ptr ptr){
-    console(_logfile,ptr);
+  _dispatchFunctor = [this](LogMsg::UPtr ptr){
+    console(_logfile,std::move(ptr));
   };
 }
 

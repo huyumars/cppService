@@ -68,7 +68,7 @@ class LogStream : public std::stringstream{
 
 class LogMsg {
   public:
-    typedef std::shared_ptr<LogMsg> Ptr;
+    typedef std::unique_ptr<LogMsg> UPtr;
     LogMsg(const std::string & msg_,
            int  line,
            const std::string & file,
@@ -97,7 +97,8 @@ void _logStream_sendfunc(LogStream &);
 
 class LogDest {
   public:
-    typedef std::shared_ptr<LogDest>  Ptr;
+    //typedef std::shared_ptr<LogDest>  Ptr;
+    typedef std::unique_ptr<LogDest>  UPtr;
     enum class Type{
       file,
       stdout,
@@ -106,16 +107,16 @@ class LogDest {
     LogDest(Type type);
     LogDest(const std::string file);
     void set_log_level(LogType level_){_log_level =  level_;}
-    void dispatch(LogMsg::Ptr msgPtr) {_dispatchFunctor(msgPtr);};
+    void dispatch(LogMsg::UPtr msgPtr) {_dispatchFunctor(std::move(msgPtr));};
   private:
     LogType _log_level;
-    std::function<void(LogMsg::Ptr)>  _dispatchFunctor;
+    std::function<void(LogMsg::UPtr)>  _dispatchFunctor;
     std::ofstream  _logfile;
 };
 
 class Logger {
   public:
-    typedef PCQueue<LogMsg::Ptr>        MsgQueue;
+    typedef PCQueue<LogMsg::UPtr>        MsgQueue;
 
     Logger(const Logger & ) = delete;
     Logger(Logger && ) = delete;
@@ -128,18 +129,18 @@ class Logger {
                     int                line_,
                     const std::string & file_,
                     LogType level_);
-    static void send(LogMsg::Ptr logMsg);
+    static void send(LogMsg::UPtr logMsg);
     static void addDest(LogDest::Type);
     static void addDest(const std::string &);
 
   private:
     void run();
-    void _addDest(LogDest::Ptr);
-    void _sendAync(LogMsg::Ptr);
+    void _addDest(LogDest::UPtr);
+    void _sendAync(LogMsg::UPtr);
     std::mutex _map_m;
     MsgQueue           _queue;
     std::atomic_bool  _running;
-    std::vector<LogDest::Ptr>  _dests;
+    std::vector<LogDest::UPtr>  _dests;
     std::thread  _thread;
 };
 
