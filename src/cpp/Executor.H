@@ -1,7 +1,7 @@
 #ifndef EXECUTOR
 #define EXECUTOR
 
-#include "TaskQueue.H"
+#include "ThreadSafe.H"
 
 #include<iostream>
 #include<thread>
