@@ -42,16 +42,11 @@ class LogStream;
 class LogStream : public std::ostream{
   public:
     LogStream(){};
-    void set(int line, const std::string & fileName, LogType _level);
-  private:
-    int _line;
-    std::string _fileName;
-    LogType _level;
 
 };
-class LogObject {
+class LogObject: public LogStream {
   typedef std::thread::id   threadKey;
-  typedef std::shared_ptr<LogStream>   StreamPtr;
+  typedef std::shared_ptr<LogObject>   StreamPtr;
   typedef std::unordered_map<threadKey,StreamPtr>   StreamMap;
   public:
     static LogStream & fastLogging(int line, const std::string & fileName, LogType _level);
@@ -64,6 +59,11 @@ class LogObject {
       return *_map[threadid];
     };
     StreamMap  _map;
+    int _line;
+    std::string _fileName;
+    LogType _level;
+
+    void set(int line, const std::string & fileName, LogType _level);
 };
 
 class LogMsg {

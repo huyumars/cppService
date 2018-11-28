@@ -114,14 +114,14 @@ std::ostream & operator<<(std::ostream & os, const LogMsg &msg){
 
 
 
-void LogStream::set(int line_, const std::string & fileName_, LogType level_) {
+void LogObject::set(int line_, const std::string & fileName_, LogType level_) {
   _line = line_;
   _fileName = fileName_;
   _level = level_;
 }
 
 LogStream & LogObject::fastLogging(int line, const std::string & fileName, LogType _level){
-   LogStream & logstream = Singleton<LogObject>::instance().getStream();
-   logstream.set(line,fileName,_level);
-   return logstream;
+   //LogStream & logstream = Singleton<LogObject>::instance().getStream();
+   //logstream.set(line,fileName,_level);
+   //return logstream;
 }
