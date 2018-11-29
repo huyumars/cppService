@@ -15,18 +15,18 @@ void Logger::send(const std::string & msg_,
 
 Logger::Logger():_running(true), _thread([this]{ run(); }){ }
 
-void Logger::_addDest(LogDest::UPtr d){
-  _dests.push_back(std::move(d));
+void Logger::_addDest(const std::string & key, LogDest::UPtr d){
+  _dests[key]=std::move(d);
 }
 
 void Logger::run(){
   do{
     Logger::MsgQueue::QueuePtr queuePtr; 
     _queue.getQueue(queuePtr);
-    for(LogDest::UPtr &destPtr : _dests){
+    for(auto &destPtr : _dests){
       if(queuePtr){
         while(queuePtr->size()){
-          destPtr->dispatch(std::move(queuePtr->front()));
+          destPtr.second->dispatch(std::move(queuePtr->front()));
           queuePtr->pop();
         }
       }
@@ -45,11 +45,15 @@ void Logger::send(LogMsg::UPtr msgPtr){
 }
 
 
-void Logger::addDest(LogDest::Type type){
-  Singleton<Logger>::instance()._addDest(std::make_unique<LogDest>(type));
+LogDest & Logger::getDest(const std::string &key){
+  return *(Singleton<Logger>::instance()._dests[key]);
 }
-void Logger::addDest(const std::string & fileName){
-  Singleton<Logger>::instance()._addDest(std::make_unique<LogDest>(fileName));
+
+void Logger::addDest(const std::string & key, LogDest::Type type){
+  Singleton<Logger>::instance()._addDest(key,std::make_unique<LogDest>(type));
+}
+void Logger::addDest(const std::string & key, const std::string & fileName){
+  Singleton<Logger>::instance()._addDest(key,std::make_unique<LogDest>(fileName));
 }
 
 
@@ -61,12 +65,15 @@ void console(std::ostream& os, LogMsg::UPtr msgPtr){
   if(msgPtr) os<<(*msgPtr);
 }
 
-LogDest::LogDest(Type type){
+LogDest::LogDest(Type type):
+   _log_level(LogType::debug){
   switch(type){
     case Type::stderr:
       _dispatchFunctor = [](LogMsg::UPtr ptr){
         console(std::cerr, std::move(ptr));
       };
+      break;
+    case Type::file:
       break;
     case Type::stdout:
     default:
@@ -77,11 +84,12 @@ LogDest::LogDest(Type type){
   }
 }
 
-LogDest::LogDest(const std::string file)
+LogDest::LogDest(const std::string file):LogDest(Type::file)
 {
   _logfile = std::ofstream(file,std::ofstream::out);
   _dispatchFunctor = [this](LogMsg::UPtr ptr){
-    console(_logfile,std::move(ptr));
+    if(_log_level<=ptr->level())
+      console(_logfile,std::move(ptr));
   };
 }
 

@@ -14,7 +14,7 @@ class LoggerTest:public ::testing::Test{};
 
 
 TEST_F(LoggerTest,  infoTest){
-  Logger::addDest("/var/tmp/log.log");
+  Logger::addDest("fileLog","/var/tmp/log.log");
   LOGINFO("hello world");
 }
 
@@ -36,6 +36,18 @@ TEST_F(LoggerTest,  coutStyleinfoTest){
   int a = 100;
   float z = 10.9;
   LogINFO <<"cout style"<<a<<"  "<<z<<LogSend;
+}
+
+
+TEST_F(LoggerTest,  logLevelTest){
+  LogINFO <<"INFO log"<<LogSend;
+  Logger::addDest("stderr",LogDest::Type::stderr);
+  Logger::getDest("stderr").set_log_level(LogType::error);
+  LogDEBUG<<"DEBUG log"<<LogSend;
+  LogINFO <<"INFO log"<<LogSend;
+  LogERROR<<"ERROR log"<<LogSend;
+  LogCRITICAL<<"CRITICAL log"<<LogSend;
+
 }
 
 #endif

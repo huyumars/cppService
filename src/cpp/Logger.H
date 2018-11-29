@@ -38,10 +38,9 @@ enum class LogType: int{
     critical,
 };
 
+
+
 /*
-int operator<(LogType a, LogType b){
-  return static_cast<int>(a)<static_cast<int>(b);
-}
 int operator>(LogType a, LogType b){
   return static_cast<int>(a)>static_cast<int>(b);
 }
@@ -77,6 +76,7 @@ class LogMsg {
        _thread_id = std::this_thread::get_id();
     };
     std::thread::id thread_id() const {return _thread_id;};
+    LogType level() const {return _logLevel;}
   private:
     std::thread::id  _thread_id;
     std::string      _msg;
@@ -130,17 +130,18 @@ class Logger {
                     const std::string & file_,
                     LogType level_);
     static void send(LogMsg::UPtr logMsg);
-    static void addDest(LogDest::Type);
-    static void addDest(const std::string &);
+    static void addDest(const std::string &,LogDest::Type);
+    static void addDest(const std::string &,const std::string &);
+    static LogDest & getDest(const std::string &);
 
   private:
     void run();
-    void _addDest(LogDest::UPtr);
+    void _addDest(const std::string &, LogDest::UPtr);
     void _sendAync(LogMsg::UPtr);
     std::mutex _map_m;
     MsgQueue           _queue;
     std::atomic_bool  _running;
-    std::vector<LogDest::UPtr>  _dests;
+    std::unordered_map<std::string,LogDest::UPtr>  _dests;
     std::thread  _thread;
 };
 
