@@ -23,12 +23,12 @@ void Logger::run(){
   do{
     Logger::MsgQueue::QueuePtr queuePtr; 
     _queue.getQueue(queuePtr);
-    for(auto &destPtr : _dests){
-      if(queuePtr){
-        while(queuePtr->size()){
-          destPtr.second->dispatch(std::move(queuePtr->front()));
-          queuePtr->pop();
+    if(queuePtr){
+      while(queuePtr->size()){
+        for(auto &destPtr : _dests){
+          destPtr.second->dispatch(*(queuePtr->front()));
         }
+        queuePtr->pop();
       }
     }
   }while(_running);
@@ -61,24 +61,25 @@ void Logger::_sendAync(LogMsg::UPtr msgPtr){
   _queue.put(std::move(msgPtr));
 }
 
-void console(std::ostream& os, LogMsg::UPtr msgPtr){
-  if(msgPtr) os<<(*msgPtr);
+void console(std::ostream& os, const LogMsg& msg,LogType _log_level){
+  if(_log_level<=msg.level())
+    os<<(msg);
 }
 
 LogDest::LogDest(Type type):
    _log_level(LogType::debug){
   switch(type){
     case Type::stderr:
-      _dispatchFunctor = [](LogMsg::UPtr ptr){
-        console(std::cerr, std::move(ptr));
+      _dispatchFunctor = [this](const LogMsg& msg){
+        console(std::cerr, msg,this->_log_level);
       };
       break;
     case Type::file:
       break;
     case Type::stdout:
     default:
-      _dispatchFunctor = [](LogMsg::UPtr ptr){
-        console(std::cout, std::move(ptr));
+      _dispatchFunctor = [this](LogMsg& msg){
+        console(std::cout, msg, this->_log_level);
       };
       break;
   }
@@ -87,9 +88,8 @@ LogDest::LogDest(Type type):
 LogDest::LogDest(const std::string file):LogDest(Type::file)
 {
   _logfile = std::ofstream(file,std::ofstream::out);
-  _dispatchFunctor = [this](LogMsg::UPtr ptr){
-    if(_log_level<=ptr->level())
-      console(_logfile,std::move(ptr));
+  _dispatchFunctor = [this](LogMsg& msg){
+      console(_logfile,msg, this->_log_level);
   };
 }
 
@@ -102,7 +102,7 @@ std::ostream & operator<<(std::ostream &os, const LogType& level){
       os<<"DEBUG";
       break;
     case LogType::critical:
-      os<<"INFO";
+      os<<"CRITICAL";
       break;
     case LogType::error:
       os<<"ERROR";
