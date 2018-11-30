@@ -1,0 +1,26 @@
+#ifndef TCPCLIENT
+#define TCPCLIENT
+
+#include "NetUtil.H"
+#include <functional>
+
+
+class TCPClientConnection{
+  public:
+    typedef std::string Connection;
+    typedef std::function<void(const Connection &, const std::string &)> CallBackFunc;
+    TCPClientConnection() = default;
+    TCPClientConnection(const TCPClientConnection &)= delete;
+    TCPClientConnection(TCPClientConnection &&) = delete;
+    ~TCPClientConnection();
+
+    void connect(const NetAddress & address);
+    bool send(const std::string & msg);
+    void setCallBack(const CallBackFunc  & cb);
+  private:
+    NetAddress  address;
+    int sockfd;
+    CallBackFunc _callback;
+};
+
+#endif

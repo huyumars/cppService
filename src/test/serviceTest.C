@@ -2,6 +2,7 @@
 #include "logTest.H"
 #include "executorTest.H"
 #include "threadSafeTest.H"
+#include "tcpCSTest.H"
 
 int main(int argc, char **argv)
 {
