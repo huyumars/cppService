@@ -2,6 +2,7 @@
 #define TCPCLIENT
 
 #include "NetUtil.H"
+#include "Socket.H"
 #include <functional>
 
 
@@ -19,7 +20,7 @@ class TCPClientConnection{
     void setCallBack(const CallBackFunc  & cb);
   private:
     NetAddress  address;
-    int sockfd;
+    Socket       socket;
     CallBackFunc _callback;
 };
 
