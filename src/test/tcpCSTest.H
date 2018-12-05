@@ -30,8 +30,8 @@ TEST_F(TcpCSTest, TCPClientConnectionTest){
     });
     */
   }
-  catch(std::exception ex){
-    std::cerr<<"send error since "<<ex.what()<<std::endl;
+  catch(std::exception & ex){
+    std::cerr<<"Exception"<<ex.what()<<std::endl;
   }
 }
 

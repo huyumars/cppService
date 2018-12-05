@@ -10,7 +10,7 @@ class NetAddress{
   public:
     NetAddress(const std::string & host, unsigned int port);
     NetAddress();
-    sockaddr *sockaddr_raw_ptr(){return (struct sockaddr *)(&_data); }
+    sockaddr *sockaddr_raw_ptr() const {return (struct sockaddr *)(&_data); }
     constexpr size_t addr_size() const {return sizeof(sockaddr);}
   private:
     sockaddr_in _data;
@@ -26,9 +26,9 @@ class StringException:public std::exception{
 };
 
 
-class NetworkException:public StringException {
+class NetException:public StringException {
   public:
-    NetworkException(const std::string&msg_):StringException(msg_){}
+    NetException(const std::string&msg_):StringException("[NetException]"+msg_){}
 };
 
 #endif

@@ -5,11 +5,11 @@
 
 const int BufferSize = 1024;
 
+TCPClientConnection::~TCPClientConnection() {}
+
 void TCPClientConnection::connect(const NetAddress & _address){
   address = _address;
-  if(socket.connect(address)){
-    throw NetworkException("can't connect to");
-  }
+  socket.connect(address);
 }
 
 
