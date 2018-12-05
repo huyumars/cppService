@@ -5,6 +5,9 @@
 
 const int BufferSize = 1024;
 
+TCPClientConnection::TCPClientConnection():
+  socket(Socket::SocketType::TCP){}
+
 TCPClientConnection::~TCPClientConnection() {}
 
 void TCPClientConnection::connect(const NetAddress & _address){

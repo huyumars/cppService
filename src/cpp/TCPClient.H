@@ -10,7 +10,7 @@ class TCPClientConnection{
   public:
     typedef std::string Connection;
     typedef std::function<void(const Connection &, const std::string &)> CallBackFunc;
-    TCPClientConnection() = default;
+    TCPClientConnection();
     TCPClientConnection(const TCPClientConnection &)= delete;
     TCPClientConnection(TCPClientConnection &&) = delete;
     ~TCPClientConnection();

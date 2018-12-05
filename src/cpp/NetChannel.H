@@ -14,8 +14,10 @@ class NetChannel{
       Error,
     };
     typedef std::function<void(const NetChannel&)> FunctorType;
+    typedef std::shared_ptr<NetChannel>  Ptr;
+    typedef std::unique_ptr<NetChannel>  UPtr;
 
-    NetChannel(const NetLoop&,
+    NetChannel(const NetLoop::Ptr &netloopPtr,
                Socket::SocketHandle,
                Type type,
                const std::string& name,
@@ -27,9 +29,11 @@ class NetChannel{
     std::string name() const {return _name;}
     FunctorType callback() const {return _cbfunctor;}
 
+    virtual void process();
+
   
   private:
-    std::weak_ptr<NetLoop> _netloopPtr;
+    NetLoop::WPtr          _netloopPtr;
     Socket::SocketHandle   _fd;
     Type                   _type;
     std::string            _name;
