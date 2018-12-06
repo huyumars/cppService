@@ -107,10 +107,10 @@ class LogDest {
     LogDest(Type type);
     LogDest(const std::string file);
     void set_log_level(LogType level_){_log_level =  level_;}
-    void dispatch(LogMsg &msg) {_dispatchFunctor(msg);};
+    void dispatch(const LogMsg &msg) {_dispatchFunctor(msg);};
   private:
     LogType _log_level;
-    std::function<void(LogMsg&)>  _dispatchFunctor;
+    std::function<void(const LogMsg&)>  _dispatchFunctor;
     std::ofstream  _logfile;
 };
 
