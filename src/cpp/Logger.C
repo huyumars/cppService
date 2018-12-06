@@ -78,7 +78,7 @@ LogDest::LogDest(Type type):
       break;
     case Type::stdout:
     default:
-      _dispatchFunctor = [this](LogMsg& msg){
+      _dispatchFunctor = [this](const LogMsg& msg){
         console(std::cout, msg, this->_log_level);
       };
       break;
@@ -88,7 +88,7 @@ LogDest::LogDest(Type type):
 LogDest::LogDest(const std::string file):LogDest(Type::file)
 {
   _logfile = std::ofstream(file,std::ofstream::out);
-  _dispatchFunctor = [this](LogMsg& msg){
+  _dispatchFunctor = [this](const LogMsg& msg){
       console(_logfile,msg, this->_log_level);
   };
 }
