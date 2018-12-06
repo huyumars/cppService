@@ -16,7 +16,7 @@
 class Executor{
   public:
     typedef std::function<bool()> Task;
-    typedef PCQueue<Task> Queue;
+    typedef threads::PCQueue<Task> Queue;
 
     Executor(const Executor &)= delete;
     Executor(Executor &&)= delete;

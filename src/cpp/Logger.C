@@ -41,19 +41,19 @@ Logger::~Logger(){
 }
 
 void Logger::send(LogMsg::UPtr msgPtr){
-  Singleton<Logger>::instance()._sendAync(std::move(msgPtr));
+  threads::Singleton<Logger>::instance()._sendAync(std::move(msgPtr));
 }
 
 
 LogDest & Logger::getDest(const std::string &key){
-  return *(Singleton<Logger>::instance()._dests[key]);
+  return *(threads::Singleton<Logger>::instance()._dests[key]);
 }
 
 void Logger::addDest(const std::string & key, LogDest::Type type){
-  Singleton<Logger>::instance()._addDest(key,std::make_unique<LogDest>(type));
+  threads::Singleton<Logger>::instance()._addDest(key,std::make_unique<LogDest>(type));
 }
 void Logger::addDest(const std::string & key, const std::string & fileName){
-  Singleton<Logger>::instance()._addDest(key,std::make_unique<LogDest>(fileName));
+  threads::Singleton<Logger>::instance()._addDest(key,std::make_unique<LogDest>(fileName));
 }
 
 
@@ -131,7 +131,7 @@ void LogStream::set(int line_, const std::string & fileName_, LogType level_) {
 }
 
 LogStream & LogStream::startLogging(int line, const std::string & fileName, LogType _level){
-   LogStream & logstream = Singleton<ThreadLocal<LogStream>>::instance();
+   LogStream & logstream = threads::Singleton<threads::ThreadLocal<LogStream>>::instance();
    logstream.set(line,fileName,_level);
    return logstream;
 }

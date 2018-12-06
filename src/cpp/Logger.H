@@ -116,7 +116,7 @@ class LogDest {
 
 class Logger {
   public:
-    typedef PCQueue<LogMsg::UPtr>        MsgQueue;
+    typedef threads::PCQueue<LogMsg::UPtr>        MsgQueue;
 
     Logger(const Logger & ) = delete;
     Logger(Logger && ) = delete;

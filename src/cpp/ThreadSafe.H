@@ -5,15 +5,15 @@
 #include <queue>
 #include <shared_mutex>
 #include <condition_variable>
+#include <unordered_map>
 #include <atomic>
 
+namespace  threads {
 //product consume queue
-template<typename T>
+template<typename T, typename QueueType = std::queue<T>>
 class PCQueue{
   public:
-    typedef std::queue<T>  QueueType;
     typedef std::shared_ptr<QueueType>  QueuePtr;
-
 
     PCQueue():running(true){}
     void put(const T &t){
@@ -59,16 +59,49 @@ class PCQueue{
     std::atomic_bool running;
 };
 
-template<typename T>
-class SafeQueue{
+
+
+template<typename K, typename T,typename M=std::unordered_map<K,T>>
+class Map{
   public:
     typedef std::shared_lock<std::shared_timed_mutex> ReadLock;
     typedef std::unique_lock<std::shared_timed_mutex> WriteLock;
-    bool empty(){
+    bool empty() const {
       ReadLock lock(mutex);
       return _impl.empty();
     }
-    const T & front(){
+    bool count(const K & key) const {
+      ReadLock lock(mutex);
+      return _impl.count(key);
+    }
+    const T& at(const K &key) const {
+      ReadLock lock(mutex);
+      return _impl.at(key);
+    }
+    //write
+    T& operator[](const K &key){
+      WriteLock lock(mutex);
+      return _impl[key];
+    }
+    size_t erase(const K & key){
+      WriteLock lock(mutex);
+      return _impl.erase(key);
+    }
+  private:
+    M  _impl;
+    std::shared_timed_mutex mutex;
+};
+
+template<typename T, typename Q = std::queue<T>>
+class Queue{
+  public:
+    typedef std::shared_lock<std::shared_timed_mutex> ReadLock;
+    typedef std::unique_lock<std::shared_timed_mutex> WriteLock;
+    bool empty() const{
+      ReadLock lock(mutex);
+      return _impl.empty();
+    }
+    const T & front() const{
       ReadLock lock(mutex);
       return _impl.front();
     }
@@ -81,7 +114,7 @@ class SafeQueue{
       _impl.pop();
     }
   private:
-    std::queue<T> _impl;
+    Q _impl;
     std::shared_timed_mutex mutex;
 };
 
@@ -117,4 +150,7 @@ class Singleton<ThreadLocal<T>>{
 
 };
 
+}
+
 #endif
+

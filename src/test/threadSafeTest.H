@@ -25,9 +25,9 @@ class SingletonTest: public ::testing::Test{
 
 TEST_F(SingletonTest, singletonTest){
   typedef typename SingletonTest::DeleteObject A;
-  SafeQueue<A*> q;
+  threads::Queue<A*> q;
   MutiltiThreadTest(20,1,[&q](int i, int j){
-     q.push(&Singleton<A>::instance());
+     q.push(&threads::Singleton<A>::instance());
   });
   A * address = nullptr;
   while(!q.empty()){
@@ -47,7 +47,7 @@ TEST_F(SingletonTest, threadSingletonTest){
     alivePointers.erase(a);
   };
   MutiltiThreadTest(20,1,[&alivePointers,&m,observer](int i, int j){
-      A & a = Singleton<ThreadLocal<A>>::instance();
+      A & a = threads::Singleton<threads::ThreadLocal<A>>::instance();
       {
         std::unique_lock<std::mutex> lock(m);
         alivePointers.insert(&a);
