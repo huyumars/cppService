@@ -3,12 +3,14 @@
 #include <cstring>
 #include <unistd.h>
 
+#include <iostream>
+
 const int BufferSize = 1024;
 
 TCPClientConnection::TCPClientConnection():
   socket(Socket::SocketType::TCP){}
 
-TCPClientConnection::~TCPClientConnection() {}
+TCPClientConnection::~TCPClientConnection() { }
 
 void TCPClientConnection::connect(const NetAddress & _address){
   address = _address;
