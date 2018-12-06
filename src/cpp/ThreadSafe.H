@@ -66,15 +66,15 @@ class Map{
   public:
     typedef std::shared_lock<std::shared_timed_mutex> ReadLock;
     typedef std::unique_lock<std::shared_timed_mutex> WriteLock;
-    bool empty() const {
+    bool empty(){
       ReadLock lock(mutex);
       return _impl.empty();
     }
-    bool count(const K & key) const {
+    bool count(const K & key){
       ReadLock lock(mutex);
       return _impl.count(key);
     }
-    const T& at(const K &key) const {
+    const T& at(const K &key){
       ReadLock lock(mutex);
       return _impl.at(key);
     }
@@ -97,11 +97,11 @@ class Queue{
   public:
     typedef std::shared_lock<std::shared_timed_mutex> ReadLock;
     typedef std::unique_lock<std::shared_timed_mutex> WriteLock;
-    bool empty() const{
+    bool empty(){
       ReadLock lock(mutex);
       return _impl.empty();
     }
-    const T & front() const{
+    const T & front(){
       ReadLock lock(mutex);
       return _impl.front();
     }
