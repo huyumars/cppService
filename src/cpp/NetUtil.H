@@ -11,7 +11,7 @@ class NetAddress{
     NetAddress(const std::string & host, unsigned int port);
     NetAddress();
     sockaddr *sockaddr_raw_ptr() const {return (struct sockaddr *)(&_data); }
-    constexpr size_t addr_size() const {return sizeof(sockaddr);}
+    static constexpr size_t addr_size() {return sizeof(sockaddr);}
   private:
     sockaddr_in _data;
 };
