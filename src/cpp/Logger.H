@@ -10,6 +10,7 @@
 #include <functional>
 #include <sstream>
 
+
 #define LOGFUNC(_str_, _level_)  \
     Logger::send(_str_,__LINE__ , __FILE__,_level_)
 
@@ -29,7 +30,7 @@
 #define LogERROR     _STARTLOG(LogType::error)
 #define LogCRITICAL  _STARTLOG(LogType::critical)
 
-#define LogSend     _logStream_sendfunc
+#define LogSend   _logStream_sendfunc
 
 enum class LogType: int{
     debug= 0,

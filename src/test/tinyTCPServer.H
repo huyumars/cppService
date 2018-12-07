@@ -1,20 +1,12 @@
 #ifndef TINYTCPSERVER
 #define TINYTCPSERVER
 
-#include <iostream>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <memory>
-#include <cstring>
-
 
 #include "NetUtil.H"
 #include "NetLoop.H"
 #include "Socket.H"
 #include "NetChannel.H"
+#include "Logger.H"
 
 class TinyTCPServer {
   public:
@@ -48,7 +40,12 @@ class TinyTCPServer {
       memset(buffer, 0 ,sizeof(buffer));
       int len = client.recv(buffer, sizeof(buffer));
       if(len>0){
+        LogINFO<<"recv from client"<<client.handler()<<LogSend;
         clientData[client.handler()]=std::string(buffer);
+        notifySend(client);
+      }
+      else{
+        _close(client.handler());
       }
     }
     void notifySend(const Socket& client){
@@ -62,6 +59,7 @@ class TinyTCPServer {
       wchannels[client.handler()]->disable();
     }
     void _close(Socket::SocketHandle fd){
+      if(clients.count(fd)==0) return;
        rchannels.erase(fd);
        wchannels.erase(fd);
        echannels.erase(fd);
@@ -81,7 +79,6 @@ class TinyTCPServer {
           "clientr",
           [this,&client](const NetChannel& nc){
           recv(client);
-          notifySend(client);
           });
       rchannels[fd]->enable();
       wchannels[fd]= NetChannelFactory(_netloopPtr,
@@ -98,7 +95,7 @@ class TinyTCPServer {
           "cliente",
           [this](const NetChannel& nc){
           //if not enable won't trigger
-          std::cout<<"close "<<nc.fd()<<std::endl;
+          LogINFO<<"get error"<<LogSend;
           _close(nc.fd());
           });
       echannels[fd]->enable();
@@ -112,9 +109,9 @@ class TinyTCPServer {
           NetChannel::Type::Read,
           "tinyserverListener",
           [this](const NetChannel& nc){
-          std::cout<<"get connect from"<<std::endl;
           auto clientSocket = _socket.accept();
           auto fd = clientSocket.handler();
+          LogINFO<<"get connection , and open"<<fd<<LogSend;
           clients[fd]=std::move(clientSocket);
           connect(clients[fd]);
           });

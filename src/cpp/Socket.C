@@ -3,6 +3,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include "Logger.H"
 
 #define THROW_WHEN(ret,val,msg) \
   if(ret==val) throw NetException(msg);
@@ -32,10 +33,14 @@ Socket::Socket(SocketHandle handle){
 Socket::Socket(const SocketType & type){
   fd = ::socket(AF_INET, static_cast<int>(type), 0);
   VERIFY_FD;
+  LogDEBUG<<"start socket "<<fd<<LogSend;
 }
 
 Socket::~Socket(){
-  if(fd!=INVALID_SOCKET) ::close(fd);
+  if(fd!=INVALID_SOCKET){
+    LogDEBUG<<"close socket "<<fd<<LogSend;
+    ::close(fd);
+  }
 }
 
 Socket Socket::accept() const{

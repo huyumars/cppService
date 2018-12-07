@@ -34,7 +34,7 @@ void NetEPoll::addChannel(const ChannelWPtr&cp_){
   switch(cp->type()){
     case NetChannel::Type::Read:
       polldata.rchannelptr = cp;
-      polldata.eventPtr->events |= EPOLLIN;
+      polldata.eventPtr->events |= (EPOLLIN|EPOLLHUP);
       break;
     case NetChannel::Type::Write:
       polldata.wchannelptr = cp;
@@ -58,7 +58,7 @@ void NetEPoll::rmChannel(const ChannelWPtr&cp_){
   EPollData & polldata = _registerSockets[fd];
   switch(cp->type()){
     case NetChannel::Type::Read:
-      polldata.eventPtr->events -= EPOLLIN;
+      polldata.eventPtr->events -= (EPOLLIN|EPOLLHUP);
       break;
     case NetChannel::Type::Write:
       polldata.eventPtr->events -= EPOLLOUT;
