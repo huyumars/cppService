@@ -1,11 +1,12 @@
 #include "NetEPoll.H"
+#include  "NetChannel.H"
 #include <unistd.h>
 
 
 NetEPoll::NetEPoll():
+  // might set to EPOLL_CLOEXEC which will gurantee fd will be closed after fork()
   _epfd( ::epoll_create1(0)),
   _numpendingEvents(0){
-    // might set to EPOLL_CLOEXEC which will gurantee fd will be closed after fork()
 }
 
 
@@ -19,11 +20,15 @@ NetEPoll::NetEPoll(NetEPoll && epoll)
 }
 
 
-void NetEPoll::addChannel(const ChannelPtr&cp){
+void NetEPoll::addChannel(const ChannelWPtr&cp_){
+  if(cp_.expired()) return;
+  auto cp = cp_.lock();
   Socket::SocketHandle fd = cp->fd();
+  int op = EPOLL_CTL_MOD;
   if(!_registerSockets.count(fd)){
     _registerSockets[fd] = EPollData();
     _registerSockets[fd].eventPtr->data.fd = fd;
+    op = EPOLL_CTL_ADD;
   }
   EPollData & polldata = _registerSockets[fd];
   switch(cp->type()){
@@ -42,10 +47,12 @@ void NetEPoll::addChannel(const ChannelPtr&cp){
     default:
       break;
   }
-  ::epoll_ctl(_epfd,EPOLL_CTL_ADD,cp->fd(),polldata.eventPtr.get());
+  ::epoll_ctl(_epfd,op,cp->fd(),polldata.eventPtr.get());
 }
 
-void NetEPoll::rmChannel(const ChannelPtr&cp){
+void NetEPoll::rmChannel(const ChannelWPtr&cp_){
+  if(cp_.expired()) return;
+  auto cp = cp_.lock();
   Socket::SocketHandle fd = cp->fd();
   if(!_registerSockets.count(fd)) return;
   EPollData & polldata = _registerSockets[fd];
@@ -62,27 +69,40 @@ void NetEPoll::rmChannel(const ChannelPtr&cp){
     default:
       break;
   }
-  ::epoll_ctl(_epfd,EPOLL_CTL_DEL,fd,polldata.eventPtr.get());
-  auto events = polldata.eventPtr->events;
-  //no events anymore
-  if(events == 0){
+  //no events anymore delete
+  if(polldata.eventPtr->events== 0){
     _registerSockets.erase(fd);
+    ::epoll_ctl(_epfd,EPOLL_CTL_DEL,fd,polldata.eventPtr.get());
+  }
+  // just modify
+  else {
+    ::epoll_ctl(_epfd,EPOLL_CTL_MOD,fd,polldata.eventPtr.get());
   }
 }
 
 
 int NetEPoll::multiplex(int timeout){
   memset(_pendingEvents,0,sizeof(epoll_event)*_maxPoll);
-  int _numpendingEvents= ::epoll_wait(_epfd,_pendingEvents,_maxPoll,timeout);
-  return _numpendingEvents;
+  int rc= ::epoll_wait(_epfd,_pendingEvents,_maxPoll,timeout);
+  _numpendingEvents = std::max(0,rc);
+  return rc;
 }
 
-void NetEPoll::getPendingChannelList(ChannelList & list_){
+void NetEPoll::pendingList(ChannelList & list_){
   //clean
-  list_.clear();
+  std::unique_lock<std::mutex> pendingLock(_pendingEventsMutex);
   for(int i=0; i< _numpendingEvents; ++i){
-
+    Socket::SocketHandle fd = _pendingEvents[i].data.fd; 
+    EPollData & polldata = _registerSockets[fd];
+    if(_pendingEvents[i].events &(EPOLLIN|EPOLLHUP)){
+       list_.push_back(polldata.rchannelptr);
+    }
+    if(_pendingEvents[i].events &(EPOLLOUT)){
+       list_.push_back(polldata.wchannelptr);
+    }
+    if(_pendingEvents[i].events &(EPOLLERR)){
+       list_.push_back(polldata.echannelptr);
+    }
   }
-
 }
 

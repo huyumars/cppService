@@ -12,6 +12,17 @@
 
 Socket::Socket():fd(Socket::INVALID_SOCKET){}
 
+Socket::Socket(Socket&& s):fd(s.fd){
+  s.fd = INVALID_SOCKET;
+}
+
+Socket& Socket::operator=(Socket&&s){
+  if(fd!=INVALID_SOCKET) ::close(fd);
+  fd=s.fd;
+  s.fd = INVALID_SOCKET;
+  return *this;
+}
+
 Socket::Socket(SocketHandle handle){
   ::close(fd);
   fd = handle;
@@ -24,7 +35,7 @@ Socket::Socket(const SocketType & type){
 }
 
 Socket::~Socket(){
-  ::close(fd);
+  if(fd!=INVALID_SOCKET) ::close(fd);
 }
 
 Socket Socket::accept() const{

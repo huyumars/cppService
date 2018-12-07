@@ -14,8 +14,13 @@ class Socket {
     explicit Socket(SocketHandle handle);
     Socket();
     Socket(const SocketType &);
+    Socket(const Socket&) = delete;
+    Socket& operator=(const Socket&)=delete;
+    Socket(Socket &&);
     virtual ~Socket();
-    bool valid() const{return fd==INVALID_SOCKET;};
+    Socket& operator=(Socket&&);
+
+    bool valid() const{return fd!=INVALID_SOCKET;};
     SocketHandle handler() const{return fd;}
 
     Socket accept() const;
