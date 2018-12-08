@@ -16,6 +16,8 @@ class PCQueue{
     typedef std::shared_ptr<QueueType>  QueuePtr;
 
     PCQueue():running(true){}
+    //unsafe get empty()
+    bool _empty() const {return _impl.empty();}
     void put(const T &t){
       std::unique_lock<std::mutex> lock(mutex);
       _impl.push(t);

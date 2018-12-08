@@ -31,7 +31,8 @@ void Logger::run(){
         queuePtr->pop();
       }
     }
-  }while(_running);
+  // finish all jobs before deading
+  }while(_running||!_queue._empty());
 }
 
 Logger::~Logger(){
