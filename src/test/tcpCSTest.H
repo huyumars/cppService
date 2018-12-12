@@ -27,10 +27,10 @@ std::thread                    TcpCSTest::serverrunner=std::thread();
 
 
 TEST_F(TcpCSTest, TCPClientConnectionTest){
-  Logger::addDest("stdout",LogDest::Type::stdout); 
+  //Logger::addDest("stdout",LogDest::Type::stdout); 
   //wait 1s to let server start;
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  ::MutiltiThreadTest(1,1,[](int thread_, int loop_)
+  ::MutiltiThreadTest(10,3,[](int thread_, int loop_)
       {
       try{
         TCPClientConnection client;
