@@ -4,11 +4,13 @@
 #include <map>
 #include <atomic>
 #include <thread>
+#include <functional>
 #include "NetEPoll.H"
 #include "Types.H"
 
 
 class WakeUpChannel;
+class NetChannel;
 
 class NetLoop :public SharedObject<NetLoop>{
   public:
@@ -20,10 +22,11 @@ class NetLoop :public SharedObject<NetLoop>{
     typedef  NetEPoll::ChannelWPtr  ChannelWPtr;
     typedef  NetEPoll::ChannelPtr   ChannelPtr;
     typedef  NetEPoll::ChannelList  ChannelList;
+    typedef  std::function<void(const WakeUpChannel&)> WKChannelCB;
 
     void start();
     bool inloopThread() const {return std::this_thread::get_id()==_loopthread_id;}
-    void stop(){running = false;}
+    void asyncStop();
     bool addChannel(const NetChannel&);
     bool rmChannel(const NetChannel&);
     ~NetLoop();
@@ -32,14 +35,17 @@ class NetLoop :public SharedObject<NetLoop>{
     NetLoop();
     //only allow factory to create
     friend   SharedObject<NetLoop>::Factory;
+    void stop(){running = false;}
     void runLoop();
     void ioMulitplex(int timeout);
     void processChannels();
+    void processWakeUp(const WakeUpChannel &);
     std::atomic_bool      running;
     Poller                poller;
     ChannelList           pendingChannels;
     ThreadID               _loopthread_id;
     std::shared_ptr<WakeUpChannel> _wakeupchannel;
+    WKChannelCB           _wakeupCallBack;
 };
 
 

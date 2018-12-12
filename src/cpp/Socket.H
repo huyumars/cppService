@@ -31,7 +31,9 @@ class Socket {
     int listen(int backlog_=5) const;
     int connect(const NetAddress & address) const;
     inline ssize_t send(const void * buf, size_t len_) const;
+    ssize_t write(const void * buf, size_t len_) const;
     inline ssize_t recv(void * buf_, size_t len_) const;
+    ssize_t read(void * buf_, size_t len_) const;
 
 
 

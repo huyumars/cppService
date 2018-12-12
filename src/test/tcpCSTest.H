@@ -8,20 +8,29 @@
 #include <thread>
 #include "Logger.H"
 
-class TcpCSTest: public ::testing::Test{};
+class TcpCSTest: public ::testing::Test{
+  public:
+  static void SetUpTestCase() {
+    server = std::make_shared<TinyTCPServer>("127.0.0.1", 8888);
+    serverrunner =std::thread(
+      [](){
+      server->run();
+      LogINFO<<"server will close now "<<LogSend;
+    });
+  }
+  static std::shared_ptr<TinyTCPServer> server;
+  static std::thread                    serverrunner;
+};
 
+std::shared_ptr<TinyTCPServer> TcpCSTest::server=std::shared_ptr<TinyTCPServer>();
+std::thread                    TcpCSTest::serverrunner=std::thread();
 
 
 TEST_F(TcpCSTest, TCPClientConnectionTest){
   Logger::addDest("stdout",LogDest::Type::stdout); 
-  std::thread serverrunner(
-      [](){
-      TinyTCPServer server("127.0.0.1",8888);
-      server.run();
-      });
   //wait 1s to let server start;
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  ::MutiltiThreadTest(3,3,[](int thread_, int loop_)
+  ::MutiltiThreadTest(1,1,[](int thread_, int loop_)
       {
       try{
         TCPClientConnection client;
@@ -40,12 +49,15 @@ TEST_F(TcpCSTest, TCPClientConnectionTest){
       }
 
    });
-  /*
-     MutiltiThreadTest(10,10,[&client](int thread_id, int loop_id){
-     client.send("send from "+std::to_string(thread_id)+" in loop " + std::to_string(loop_id));
-     });
-     */
+  LogINFO<<"server will close now "<<LogSend;
+}
+
+TEST_F(TcpCSTest, NetLoopServerCloseTest){
+  server->asyncStop(); 
   serverrunner.join();
+  //never left static object
+  //which might call logger function
+  server.reset();
 }
 
 #endif

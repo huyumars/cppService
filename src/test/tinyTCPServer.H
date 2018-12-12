@@ -16,22 +16,22 @@ class TinyTCPServer {
       }; 
 
     void run(){
+      try{
       _netloopPtr = NetLoop::Factory::create();
       listen();
       _netloopPtr->start();
-      /*
-         char buffer[1024];
-         int i =0;
-         while(1) {
-         i++;
-         memset(buffer, 0 ,sizeof(buffer));
-         int len = conn.recv(buffer, sizeof(buffer));
-         if(len<=0) break;
-         std::string istr = std::to_string(i);
-         strcpy(buffer+len-1, istr.c_str());
-         conn.send(buffer,len+istr.size()+1);
-         }
-         */
+      }
+      catch(std::exception& ex){
+         LogERROR<<ex.what()<<LogSend;
+      }
+    }
+    void asyncStop(){
+      try{
+      _netloopPtr->asyncStop();
+      }
+      catch(std::exception&ex){
+         LogERROR<<ex.what()<<LogSend;
+      }
     }
 
   private:
@@ -65,9 +65,6 @@ class TinyTCPServer {
        echannels.erase(fd);
        clients.erase(fd);
        clientData.erase(fd);
-       if(clients.size()==0){
-         _netloopPtr->stop(); 
-       }
     }
     void connect(const Socket &client){
       if(!client.valid()) return;

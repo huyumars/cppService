@@ -91,3 +91,12 @@ int Socket::setNonBlocking() const {
   return ::ioctl(fd,FIONBIO,1);
 }
 
+
+ssize_t Socket::write(const void * buf, size_t len) const {
+  return ::write(fd,buf, len);
+}
+
+ssize_t Socket::read(void * buf_, size_t len) const{
+  return ::read(fd, buf_, len);
+}
+

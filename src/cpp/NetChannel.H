@@ -50,8 +50,7 @@ class WakeUpChannel: public NetChannel {
     typedef std::weak_ptr<WakeUpChannel>  WPtr;
     typedef SharedFactory<WakeUpChannel>  Factory;
     ~WakeUpChannel() override;
-    WakeUpChannel(const NetLoop::Ptr &netloopPtr,
-                  const FunctorType &);
+    WakeUpChannel(const NetLoop::Ptr &netloopPtr,const FunctorType &);
     void notify() const;
     void ack() const;
   private:

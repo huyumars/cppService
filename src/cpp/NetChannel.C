@@ -38,8 +38,7 @@ NetChannel::~NetChannel(){
 //wake up channel
 WakeUpChannel::~WakeUpChannel(){}
 
-WakeUpChannel::WakeUpChannel(const NetLoop::Ptr & netloopPtr,
-                            const FunctorType& cb):
+WakeUpChannel::WakeUpChannel(const NetLoop::Ptr & netloopPtr, const FunctorType & cb):
   NetChannel(netloopPtr, ::eventfd(0,0),Type::Read,"wakeupchannel",cb),
   _eventSocket(fd())
 { }
@@ -47,14 +46,14 @@ WakeUpChannel::WakeUpChannel(const NetLoop::Ptr & netloopPtr,
 
 void WakeUpChannel::notify() const {
   uint64_t u = 1;
-  auto r = _eventSocket.send(&u,sizeof(uint64_t));
+  auto r = _eventSocket.write(&u,sizeof(uint64_t));
   if(r!=sizeof(uint64_t)) throw NetException("notify send failed");
   //don't close the fd by swap
 }
 
 void WakeUpChannel::ack() const {
   uint64_t u;
-  auto r = _eventSocket.recv(&u,sizeof(uint64_t));
+  auto r = _eventSocket.read(&u,sizeof(uint64_t));
   if(r!=sizeof(uint64_t)) throw NetException("ack recv failed");
 }
 
