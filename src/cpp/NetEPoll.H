@@ -25,8 +25,8 @@ class NetEPoll{
     NetEPoll(NetEPoll &&);
 
     bool valid() const {return _epfd != INVALID_EPOLL;}
-    void addChannel(const ChannelWPtr &) ;
-    void rmChannel(const ChannelWPtr &) ;
+    void addChannel(const NetChannel &) ;
+    void rmChannel(const NetChannel &) ;
     int multiplex(int timeout) ;
     void pendingList(ChannelList &list_) ;
   private:

@@ -16,7 +16,7 @@ class TinyTCPServer {
       }; 
 
     void run(){
-      _netloopPtr = std::make_shared<NetLoop>();
+      _netloopPtr = NetLoop::Factory::create();
       listen();
       _netloopPtr->start();
       /*
@@ -73,7 +73,7 @@ class TinyTCPServer {
       if(!client.valid()) return;
       client.setNonBlocking();
       Socket::SocketHandle fd = client.handler();
-      rchannels[fd]= NetChannelFactory(_netloopPtr,
+      rchannels[fd]= NetChannel::Factory::create(_netloopPtr,
           client.handler(),
           NetChannel::Type::Read,
           "clientr",
@@ -81,7 +81,7 @@ class TinyTCPServer {
           recv(client);
           });
       rchannels[fd]->enable();
-      wchannels[fd]= NetChannelFactory(_netloopPtr,
+      wchannels[fd]= NetChannel::Factory::create(_netloopPtr,
           client.handler(),
           NetChannel::Type::Write,
           "clientw",
@@ -89,7 +89,7 @@ class TinyTCPServer {
           send(client);
           //if not enable won't trigger
           });
-      echannels[fd]= NetChannelFactory(_netloopPtr,
+      echannels[fd]= NetChannel::Factory::create(_netloopPtr,
           client.handler(),
           NetChannel::Type::Error,
           "cliente",
@@ -104,7 +104,7 @@ class TinyTCPServer {
       _socket.bind(_addr);
       _socket.listen();
       _socket.setNonBlocking();
-      listenChannel = NetChannelFactory(_netloopPtr,
+      listenChannel = NetChannel::Factory::create(_netloopPtr,
           _socket.handler(),
           NetChannel::Type::Read,
           "tinyserverListener",

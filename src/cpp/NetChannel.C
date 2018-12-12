@@ -1,4 +1,5 @@
 #include "NetChannel.H"
+#include <sys/eventfd.h>
 
 NetChannel::NetChannel(
     const NetLoop::Ptr & nlp,
@@ -17,14 +18,16 @@ void NetChannel::process(){
   if(_cbfunctor) _cbfunctor(*this);
 }
 
+
 void NetChannel::enable() {
-  _weakptr = shared_from_this();
-  _netloopPtr.lock()->addChannel(_weakptr);
+  if(_netloopPtr.expired()) return;
+  _netloopPtr.lock()->addChannel(*this);
 }
 
 
 void NetChannel::disable(){
-  _netloopPtr.lock()->rmChannel(_weakptr);
+  if(_netloopPtr.expired()) return;
+  _netloopPtr.lock()->rmChannel(*this);
 }
 
 NetChannel::~NetChannel(){
@@ -32,13 +35,26 @@ NetChannel::~NetChannel(){
 }
 
 
-NetChannel::Ptr NetChannelFactory(const NetLoop::Ptr &netloopPtr,
-               Socket::SocketHandle fd,
-               NetChannel::Type type,
-               const std::string& name,
-               const NetChannel::FunctorType &functor){
-  auto ncp = std::shared_ptr<NetChannel>(new NetChannel(netloopPtr, fd, type, name, functor));
-  return ncp;
+//wake up channel
+WakeUpChannel::~WakeUpChannel(){}
+
+WakeUpChannel::WakeUpChannel(const NetLoop::Ptr & netloopPtr,
+                            const FunctorType& cb):
+  NetChannel(netloopPtr, ::eventfd(0,0),Type::Read,"wakeupchannel",cb),
+  _eventSocket(fd())
+{ }
+
+
+void WakeUpChannel::notify() const {
+  uint64_t u = 1;
+  auto r = _eventSocket.send(&u,sizeof(uint64_t));
+  if(r!=sizeof(uint64_t)) throw NetException("notify send failed");
+  //don't close the fd by swap
 }
 
+void WakeUpChannel::ack() const {
+  uint64_t u;
+  auto r = _eventSocket.recv(&u,sizeof(uint64_t));
+  if(r!=sizeof(uint64_t)) throw NetException("ack recv failed");
+}
 

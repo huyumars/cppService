@@ -41,6 +41,7 @@ Socket::~Socket(){
     LogDEBUG<<"close socket "<<fd<<LogSend;
     ::close(fd);
   }
+  fd=INVALID_SOCKET;
 }
 
 Socket Socket::accept() const{

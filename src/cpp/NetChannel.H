@@ -5,8 +5,12 @@
 #include <functional>
 #include "NetLoop.H"
 #include "Socket.H"
+#include "Types.H"
 
-class NetChannel : public std::enable_shared_from_this<NetChannel>{
+
+
+
+class NetChannel:public SharedObject<NetChannel>{
   public:
     enum class Type:int{
       Read,
@@ -14,31 +18,24 @@ class NetChannel : public std::enable_shared_from_this<NetChannel>{
       Error,
     };
     typedef std::function<void(const NetChannel&)> FunctorType;
-    typedef std::shared_ptr<NetChannel>  Ptr;
-    typedef std::shared_ptr<NetChannel>  WPtr;
     typedef std::unique_ptr<NetChannel>  UPtr;
 
-    ~NetChannel();
+    virtual ~NetChannel();
     void enable();
     void disable();
+    //WPtr weak_pointer() const {return _weakptr;}
     Socket::SocketHandle fd() const {return _fd;}
     Type type() const {return _type;}
     std::string name() const {return _name;}
     FunctorType callback() const {return _cbfunctor;}
 
     virtual void process();
-    friend Ptr NetChannelFactory(const NetLoop::Ptr &netloopPtr,
-               Socket::SocketHandle,
-               Type type,
-               const std::string& name,
-               const FunctorType &);
-  private:
-    //private constructor , using factory to create oject on heap with std::ptr
     NetChannel(const NetLoop::Ptr &netloopPtr,
                Socket::SocketHandle,
                Type type,
                const std::string& name,
                const FunctorType &);
+  private:
     NetLoop::WPtr          _netloopPtr;
     Socket::SocketHandle   _fd;
     Type                   _type;
@@ -47,11 +44,21 @@ class NetChannel : public std::enable_shared_from_this<NetChannel>{
     WPtr                   _weakptr;
 };
 
+class WakeUpChannel: public NetChannel {
+  public:
+    typedef std::shared_ptr<WakeUpChannel> Ptr;
+    typedef std::weak_ptr<WakeUpChannel>  WPtr;
+    typedef SharedFactory<WakeUpChannel>  Factory;
+    ~WakeUpChannel() override;
+    WakeUpChannel(const NetLoop::Ptr &netloopPtr,
+                  const FunctorType &);
+    void notify() const;
+    void ack() const;
+  private:
+    // only for event fd;
+    friend  Factory;
+    Socket _eventSocket;
+};
 
-NetChannel::Ptr NetChannelFactory(const NetLoop::Ptr &netloopPtr,
-               Socket::SocketHandle,
-               NetChannel::Type type,
-               const std::string& name,
-               const NetChannel::FunctorType &);
 
 #endif

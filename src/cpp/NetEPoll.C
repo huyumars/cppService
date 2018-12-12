@@ -20,10 +20,8 @@ NetEPoll::NetEPoll(NetEPoll && epoll)
 }
 
 
-void NetEPoll::addChannel(const ChannelWPtr&cp_){
-  if(cp_.expired()) return;
-  auto cp = cp_.lock();
-  Socket::SocketHandle fd = cp->fd();
+void NetEPoll::addChannel(const NetChannel &ch){
+  Socket::SocketHandle fd = ch.fd();
   int op = EPOLL_CTL_MOD;
   if(!_registerSockets.count(fd)){
     _registerSockets[fd] = EPollData();
@@ -31,48 +29,46 @@ void NetEPoll::addChannel(const ChannelWPtr&cp_){
     op = EPOLL_CTL_ADD;
   }
   EPollData & polldata = _registerSockets[fd];
-  switch(cp->type()){
+  switch(ch.type()){
     case NetChannel::Type::Read:
-      polldata.rchannelptr = cp;
+      polldata.rchannelptr = ch.get_weak();
       polldata.eventPtr->events |= (EPOLLIN|EPOLLHUP);
       break;
     case NetChannel::Type::Write:
-      polldata.wchannelptr = cp;
+      polldata.wchannelptr = ch.get_weak();
       polldata.eventPtr->events |= EPOLLOUT;
       break;
     case NetChannel::Type::Error:
-      polldata.echannelptr = cp;
+      polldata.echannelptr = ch.get_weak();
       polldata.eventPtr->events |= EPOLLERR;
       break;
     default:
       break;
   }
-  ::epoll_ctl(_epfd,op,cp->fd(),polldata.eventPtr.get());
+  ::epoll_ctl(_epfd,op,ch.fd(),polldata.eventPtr.get());
 }
 
-void NetEPoll::rmChannel(const ChannelWPtr&cp_){
-  if(cp_.expired()) return;
-  auto cp = cp_.lock();
-  Socket::SocketHandle fd = cp->fd();
+void NetEPoll::rmChannel(const NetChannel &ch){
+  Socket::SocketHandle fd = ch.fd();
   if(!_registerSockets.count(fd)) return;
   EPollData & polldata = _registerSockets[fd];
-  switch(cp->type()){
+  switch(ch.type()){
     case NetChannel::Type::Read:
-      polldata.eventPtr->events -= (EPOLLIN|EPOLLHUP);
+      polldata.eventPtr->events &= ~(EPOLLIN|EPOLLHUP);
       break;
     case NetChannel::Type::Write:
-      polldata.eventPtr->events -= EPOLLOUT;
+      polldata.eventPtr->events &= ~EPOLLOUT;
       break;
     case NetChannel::Type::Error:
-      polldata.eventPtr->events -= EPOLLERR;
+      polldata.eventPtr->events &= ~EPOLLERR;
       break;
     default:
       break;
   }
   //no events anymore delete
   if(polldata.eventPtr->events== 0){
-    _registerSockets.erase(fd);
     ::epoll_ctl(_epfd,EPOLL_CTL_DEL,fd,polldata.eventPtr.get());
+    _registerSockets.erase(fd);
   }
   // just modify
   else {

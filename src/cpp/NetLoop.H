@@ -3,17 +3,17 @@
 #include <memory>
 #include <map>
 #include <atomic>
+#include <thread>
 #include "NetEPoll.H"
+#include "Types.H"
 
 
-class Poller;
+class WakeUpChannel;
 
-
-class NetLoop {
+class NetLoop :public SharedObject<NetLoop>{
   public:
-    typedef std::shared_ptr<NetLoop> Ptr;
     typedef std::unique_ptr<NetLoop> UPtr;
-    typedef std::weak_ptr<NetLoop> WPtr;
+    typedef std::thread::id              ThreadID;
     
     //for linux
     typedef  NetEPoll          Poller;
@@ -21,19 +21,25 @@ class NetLoop {
     typedef  NetEPoll::ChannelPtr   ChannelPtr;
     typedef  NetEPoll::ChannelList  ChannelList;
 
-    NetLoop();
     void start();
+    bool inloopThread() const {return std::this_thread::get_id()==_loopthread_id;}
     void stop(){running = false;}
-    bool addChannel(const ChannelWPtr&);
-    bool rmChannel(const ChannelWPtr&);
+    bool addChannel(const NetChannel&);
+    bool rmChannel(const NetChannel&);
+    ~NetLoop();
 
   private:
+    NetLoop();
+    //only allow factory to create
+    friend   SharedObject<NetLoop>::Factory;
     void runLoop();
     void ioMulitplex(int timeout);
     void processChannels();
     std::atomic_bool      running;
     Poller                poller;
     ChannelList           pendingChannels;
+    ThreadID               _loopthread_id;
+    std::shared_ptr<WakeUpChannel> _wakeupchannel;
 };
 
 
