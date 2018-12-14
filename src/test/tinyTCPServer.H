@@ -33,6 +33,14 @@ class TinyTCPServer {
          LogERROR<<ex.what()<<LogSend;
       }
     }
+    void wakeUp(const NetLoop::WakeUpCB &cb){
+      try{
+      _netloopPtr->asyncWakeUp(cb);
+      }
+      catch(std::exception&ex){
+         LogERROR<<ex.what()<<LogSend;
+      }
+    }
 
   private:
     void recv(const Socket &client){

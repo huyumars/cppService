@@ -17,7 +17,14 @@ NetLoop::~NetLoop(){
 void NetLoop::processWakeUp(const WakeUpChannel & ch){
   ch.ack();
   LogDEBUG<<"netloop wakeup by eventfd "<<ch.fd()<<LogSend;
-  if(_wakeupCallBack) _wakeupCallBack(ch);
+  threads::PCQueue<WakeUpCB>::QueuePtr cbs;
+  _wakeup_cb_queue.tryGet(cbs);
+  while(!(cbs->empty())){
+    auto cb = cbs->front();
+    cbs->pop();
+    cb(*this);
+  }
+  if(_wakeup_callBack) _wakeup_callBack(ch);
 }
 
 void NetLoop::runLoop(){
@@ -40,11 +47,17 @@ void NetLoop::start(){
 
 void NetLoop::asyncStop(){
   if(inloopThread()) return;
-  _wakeupchannel->notify();
-  _wakeupCallBack = [this](const WakeUpChannel &){
+  _wakeup_callBack = [this](const WakeUpChannel &){
     LogDEBUG<<"stoping netloop "<<LogSend;
     stop();
   };
+  _wakeupchannel->notify();
+}
+
+void NetLoop::asyncWakeUp(const WakeUpCB &cb){
+  if(inloopThread()) return;
+  _wakeup_cb_queue.put(cb);
+  _wakeupchannel->notify();
 }
 
 void NetLoop::ioMulitplex(int timeout){

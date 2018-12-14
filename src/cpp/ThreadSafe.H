@@ -43,9 +43,14 @@ class PCQueue{
       while(running && _impl.empty()){
         cv.wait(lock);
       }
-      auto t = _impl.front();
+      auto t = std::move(_impl.front());
       _impl.pop();
       return t;
+    }
+    void tryGet(QueuePtr & queuePtr_){
+      queuePtr_ = std::make_shared<QueueType>();
+      std::unique_lock<std::mutex> lock(mutex);
+      queuePtr_->swap(_impl);
     }
     void stop(){
       running = false;

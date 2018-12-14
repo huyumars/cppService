@@ -52,6 +52,19 @@ TEST_F(TcpCSTest, TCPClientConnectionTest){
   LogINFO<<"server will close now "<<LogSend;
 }
 
+TEST_F(TcpCSTest, NetLoopWakeUpTest){
+  server->wakeUp([](const NetLoop &){
+      std::cerr<<"trigger"<<std::endl;
+  });
+  server->wakeUp([](const NetLoop &){
+      std::cerr<<"trigger 2"<<std::endl;
+  });
+  server->wakeUp([](const NetLoop &){
+      std::cerr<<"trigger 3"<<std::endl;
+  });
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
 TEST_F(TcpCSTest, NetLoopServerCloseTest){
   server->asyncStop(); 
   serverrunner.join();

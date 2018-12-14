@@ -23,10 +23,12 @@ class NetLoop :public SharedObject<NetLoop>{
     typedef  NetEPoll::ChannelPtr   ChannelPtr;
     typedef  NetEPoll::ChannelList  ChannelList;
     typedef  std::function<void(const WakeUpChannel&)> WKChannelCB;
+    typedef  std::function<void(const NetLoop&)>    WakeUpCB;
 
     void start();
     bool inloopThread() const {return std::this_thread::get_id()==_loopthread_id;}
     void asyncStop();
+    void asyncWakeUp(const WakeUpCB & wakeup_cb);
     bool addChannel(const NetChannel&);
     bool rmChannel(const NetChannel&);
     ~NetLoop();
@@ -45,7 +47,8 @@ class NetLoop :public SharedObject<NetLoop>{
     ChannelList           pendingChannels;
     ThreadID               _loopthread_id;
     std::shared_ptr<WakeUpChannel> _wakeupchannel;
-    WKChannelCB           _wakeupCallBack;
+    WKChannelCB           _wakeup_callBack;
+    threads::PCQueue<WakeUpCB>  _wakeup_cb_queue;
 };
 
 
