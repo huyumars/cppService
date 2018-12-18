@@ -7,12 +7,13 @@
 #include <functional>
 #include "NetEPoll.H"
 #include "Types.H"
+#include "Timer.H"
 
 
 class WakeUpChannel;
 class NetChannel;
 
-class NetLoop :public SharedObject<NetLoop>{
+class NetLoop :public SharedObject<NetLoop>, public TimerLoop{
   public:
     typedef std::unique_ptr<NetLoop> UPtr;
     typedef std::thread::id              ThreadID;
@@ -42,6 +43,10 @@ class NetLoop :public SharedObject<NetLoop>{
     void ioMulitplex(int timeout);
     void processChannels();
     void processWakeUp(const WakeUpChannel &);
+
+    //time related
+    std::weak_ptr<TimerLoop> get_weak_ptr_of_time_loop() const override;
+
     std::atomic_bool      running;
     Poller                poller;
     ChannelList           pendingChannels;

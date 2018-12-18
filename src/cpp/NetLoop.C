@@ -75,6 +75,7 @@ void NetLoop::processChannels(){
 }
 
 
+
 bool NetLoop::addChannel(const NetChannel& cp){
   poller.addChannel(cp);
   return true;
@@ -83,4 +84,9 @@ bool NetLoop::addChannel(const NetChannel& cp){
 bool NetLoop::rmChannel(const NetChannel&cp){
   poller.rmChannel(cp);
   return true;
+}
+
+
+std::weak_ptr<TimerLoop> NetLoop::get_weak_ptr_of_time_loop() const{
+  return std::dynamic_pointer_cast<TimerLoop>(this->get_weak().lock());
 }
