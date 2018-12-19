@@ -1,3 +1,5 @@
+#include <gmock/gmock.h>
+#include "testUtility.H"
 #include <condition_variable>
 #include "Logger.H"
 #include <mutex>
@@ -40,20 +42,32 @@ class testTimeLoop :public SharedObject<testTimeLoop>, public TimerLoop {
 
 
 TEST_F(TimerTest, addtimerTest){
+  IntCallback tcb;
+  testing::Sequence  seq;
+  for(int i=0;i<10;++i){
+     EXPECT_CALL(tcb,val(::testing::Eq(i))).InSequence(seq);
+  }
   auto loop = testTimeLoop::Factory::create();
-  for(int i =10; i>=0; --i){
-    loop->addTimerT<Timer>("timer"+std::to_string(i), std::chrono::milliseconds(i*100),[i](const Timer &){
-      LogCRITICAL<<"timer "<<i<<" trigger"<<LogSend;
+  for(int i =9; i>=0; --i){
+    loop->addTimerT<Timer>("timer"+std::to_string(i), std::chrono::milliseconds(i*100),[i, &tcb](const Timer &){
+      LogINFO<<"timer "<<i<<" trigger"<<LogSend;
+      tcb.val(i);
       });
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(1300));
 }
 
 TEST_F(TimerTest, rmTimerTest){
+  IntCallback tcb;
+  testing::Sequence  seq;
+  for(int i=1;i<10;i+=2){
+     EXPECT_CALL(tcb,val(::testing::Eq(i))).InSequence(seq);
+  }
   auto loop = testTimeLoop::Factory::create();
   for(int i =10; i>=0; --i){
-    loop->addTimerT<Timer>("timer"+std::to_string(i), std::chrono::milliseconds(i*100),[i](const Timer &){
-      LogCRITICAL<<"timer "<<i<<" trigger"<<LogSend;
+    loop->addTimerT<Timer>("timer"+std::to_string(i), std::chrono::milliseconds(i*100),[i,&tcb](const Timer &){
+      LogINFO<<"timer "<<i<<" trigger"<<LogSend;
+      tcb.val(i);
       });
   }
   for(int i=0; i<=10; i+=2){

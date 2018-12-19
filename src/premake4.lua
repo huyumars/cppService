@@ -30,6 +30,7 @@ excludes {"cpp/main.cpp"}
 buildoptions { "-std=c++14", "-Wall" }
 links("pthread")
 links("gtest")
+links("gmock")
 
 
 configuration "Debug"

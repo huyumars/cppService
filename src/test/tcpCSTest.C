@@ -28,10 +28,17 @@ TEST_F(TcpCSTest, TCPClientConnectionTest){
   ::MutiltiThreadTest(10,3,[](int thread_, int loop_)
       {
       try{
+        ::StrCallback scb;
+        ::testing::Sequence seq;
+        for(int i=1;i<10;++i){
+          std::string result = "hello world "+std::to_string(i)+"from client"+std::to_string(thread_)+"|"+std::to_string(loop_);
+          EXPECT_CALL(scb,val(::testing::StrEq(result))).InSequence(seq);
+        }
         TCPClientConnection client;
         client.connect(NetAddress("127.0.0.1", 8888));
-        client.setCallBack([thread_,loop_](std::string c, std::string msg){
+        client.setCallBack([thread_,loop_, &scb](std::string c, std::string msg){
             LogINFO<<thread_<<loop_<<"client:"<<"get msg from server "<<msg<<LogSend;
+            scb.val(msg);
             });
         for(int i=1;i<10;++i){
         std::this_thread::sleep_for(std::chrono::microseconds(100));
@@ -48,28 +55,41 @@ TEST_F(TcpCSTest, TCPClientConnectionTest){
 }
 
 TEST_F(TcpCSTest, NetLoopWakeUpTest){
-  server->wakeUp([](const NetLoop &){
-      LogCRITICAL<<"wakeup trigger 1"<<LogSend;
+  ::IntCallback tcb;
+  EXPECT_CALL(tcb,val(::testing::Eq(1)));
+  EXPECT_CALL(tcb,val(::testing::Eq(2)));
+  EXPECT_CALL(tcb,val(::testing::Eq(3)));
+  server->wakeUp([&tcb](const NetLoop &){
+      LogINFO<<"wakeup trigger 1"<<LogSend;
+      tcb.val(1);
   });
-  server->wakeUp([](const NetLoop &){
-      LogCRITICAL<<"wakeup trigger 2"<<LogSend;
+  server->wakeUp([&tcb](const NetLoop &){
+      LogINFO<<"wakeup trigger 2"<<LogSend;
+      tcb.val(2);
   });
-  server->wakeUp([](const NetLoop &){
-      LogCRITICAL<<"wakeup trigger 3"<<LogSend;
+  server->wakeUp([&tcb](const NetLoop &){
+      LogINFO<<"wakeup trigger 3"<<LogSend;
+      tcb.val(3);
   });
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 }
 
 
 TEST_F(TcpCSTest, NetLoopTimerTest){
-  server->_netloopPtr->addTimerT<Timer>("t1",std::chrono::seconds(2),[](const Timer &){
-      LogCRITICAL<<"timer trigger for 2s"<<LogSend;
+  ::IntCallback tcb;
+  ::testing::Sequence  seq;
+  EXPECT_CALL(tcb,val(::testing::Eq(1))).InSequence(seq);
+  EXPECT_CALL(tcb,val(::testing::Eq(2))).InSequence(seq);
+  server->_netloopPtr->addTimerT<Timer>("t1",std::chrono::milliseconds(100),[&tcb](const Timer &){
+      LogINFO<<"timer trigger for 100ms"<<LogSend;
+      tcb.val(2);
   });
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  server->_netloopPtr->addTimerT<Timer>("t2",std::chrono::seconds(1),[](const Timer &){
-      LogCRITICAL<<"timer trigger for 1s"<<LogSend;
+  server->_netloopPtr->addTimerT<Timer>("t2",std::chrono::milliseconds(50),[&tcb](const Timer &){
+      LogINFO<<"timer trigger for 50ms"<<LogSend;
+      tcb.val(1);
   });
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
 TEST_F(TcpCSTest, NetLoopServerCloseTest){
