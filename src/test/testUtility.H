@@ -1,11 +1,11 @@
-#ifndef TESTUTILITY
-#define TESTUTILITY
+#ifndef _TESTUTILITY
+#define _TESTUTILITY
 
 #include <functional>
 #include <vector>
 #include <thread>
 
-void MutiltiThreadTest(int threadNum, int loopNumber, std::function<void(int,int)> f){
+inline void MutiltiThreadTest(int threadNum, int loopNumber, std::function<void(int,int)> f){
   std::vector<std::thread> threads;
   for(int i =0; i< threadNum; ++i){
     threads.push_back(std::thread([i,f,loopNumber](){
