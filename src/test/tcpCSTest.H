@@ -7,6 +7,7 @@
 #include "testUtility.H"
 #include <thread>
 #include "Logger.H"
+#include "Timer.H"
 
 class TcpCSTest: public ::testing::Test{
   public:
@@ -54,15 +55,27 @@ TEST_F(TcpCSTest, TCPClientConnectionTest){
 
 TEST_F(TcpCSTest, NetLoopWakeUpTest){
   server->wakeUp([](const NetLoop &){
-      std::cerr<<"trigger"<<std::endl;
+      LogCRITICAL<<"wakeup trigger 1"<<LogSend;
   });
   server->wakeUp([](const NetLoop &){
-      std::cerr<<"trigger 2"<<std::endl;
+      LogCRITICAL<<"wakeup trigger 2"<<LogSend;
   });
   server->wakeUp([](const NetLoop &){
-      std::cerr<<"trigger 3"<<std::endl;
+      LogCRITICAL<<"wakeup trigger 3"<<LogSend;
   });
   std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
+
+TEST_F(TcpCSTest, NetLoopTimerTest){
+  server->_netloopPtr->addTimerT<Timer>("t1",std::chrono::seconds(2),[](const Timer &){
+      LogCRITICAL<<"timer trigger for 2s"<<LogSend;
+  });
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  server->_netloopPtr->addTimerT<Timer>("t2",std::chrono::seconds(1),[](const Timer &){
+      LogCRITICAL<<"timer trigger for 1s"<<LogSend;
+  });
+  std::this_thread::sleep_for(std::chrono::seconds(3));
 }
 
 TEST_F(TcpCSTest, NetLoopServerCloseTest){

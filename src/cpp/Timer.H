@@ -9,6 +9,7 @@
 #include "Defines.H"
 #include "Types.H"
 
+const int defaultTimeout = 1000;
 enum class TimerType {
   Regular,
   Absolute,
@@ -56,6 +57,7 @@ class Timer {
     std::string    _name;
     std::weak_ptr<TimerMgr>  _loop;
     friend TimerMgr;
+    friend TimerLoop;
 
 };
 
@@ -64,7 +66,7 @@ class TimerMgr :public SharedObject<TimerMgr>{
   public:
     void removeTimer(const std::string&);
     void processTimer();
-    const Timer & topTimer() const;
+    Timer::WPtr  topTimer() const;
     TimerMgr();
     const Timer & getTimer(const std::string &) const;
   private:
@@ -84,18 +86,29 @@ class TimerLoop{
     TimerMgr::WPtr  timerMgr() {return _mgr;}
     template<typename T, typename ...Args>
     std::weak_ptr<T> addTimerT(Args ...args){
-      auto timer =  std::make_shared<T>(std::forward<Args>(args)...);
+      auto timer =  std::shared_ptr<T>(new T(std::forward<Args>(args)...));
+      bool needweakup = need_weakup(*timer);
       bool ret = _mgr->_addTimer(std::dynamic_pointer_cast<Timer>(timer));
-      return ret ?timer:std::weak_ptr<T>();
+      if(ret){
+        if(needweakup)
+          addtimer_weakup();
+        return timer;
+      }
+      else return std::weak_ptr<T>();
     }
     void processTimer() {
       _mgr->processTimer();
     }
+    void removeTimer(const std::string name) {
+      _mgr->removeTimer(name);
+    }
     //in milliseconds
     int timeout_for_next_events();
   protected:
-   virtual std::weak_ptr<TimerLoop> get_weak_ptr_of_time_loop() const = 0;
+    virtual std::weak_ptr<TimerLoop> get_weak_ptr_of_time_loop() const = 0;
+    virtual void addtimer_weakup() = 0;
   private:
+    bool need_weakup(const Timer &) const;
     TimerMgr::Ptr  _mgr;
 };
 

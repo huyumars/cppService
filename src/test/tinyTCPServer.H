@@ -42,7 +42,7 @@ class TinyTCPServer {
       }
     }
 
-  private:
+ //private:
     void recv(const Socket &client){
       static char buffer[1024];
       memset(buffer, 0 ,sizeof(buffer));

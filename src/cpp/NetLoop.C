@@ -22,7 +22,7 @@ void NetLoop::processWakeUp(const WakeUpChannel & ch){
   while(!(cbs->empty())){
     auto cb = cbs->front();
     cbs->pop();
-    cb(*this);
+    if(cb) cb(*this);
   }
   if(_wakeup_callBack) _wakeup_callBack(ch);
 }
@@ -36,7 +36,9 @@ void NetLoop::runLoop(){
   });
   _wakeupchannel->enable();
   while(running){
-    ioMulitplex(1000);
+    int timeout = timeout_for_next_events();
+    ioMulitplex(timeout);
+    processTimer();
     processChannels();
   }
 }
@@ -87,6 +89,11 @@ bool NetLoop::rmChannel(const NetChannel&cp){
 }
 
 
+// timer
 std::weak_ptr<TimerLoop> NetLoop::get_weak_ptr_of_time_loop() const{
   return std::dynamic_pointer_cast<TimerLoop>(this->get_weak().lock());
+}
+
+void NetLoop::addtimer_weakup() {
+  this->asyncWakeUp();
 }

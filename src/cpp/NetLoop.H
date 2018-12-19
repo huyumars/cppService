@@ -29,7 +29,8 @@ class NetLoop :public SharedObject<NetLoop>, public TimerLoop{
     void start();
     bool inloopThread() const {return std::this_thread::get_id()==_loopthread_id;}
     void asyncStop();
-    void asyncWakeUp(const WakeUpCB & wakeup_cb);
+    //default do nothing just weak up
+    void asyncWakeUp(const WakeUpCB & wakeup_cb=WakeUpCB());
     bool addChannel(const NetChannel&);
     bool rmChannel(const NetChannel&);
     ~NetLoop();
@@ -46,6 +47,7 @@ class NetLoop :public SharedObject<NetLoop>, public TimerLoop{
 
     //time related
     std::weak_ptr<TimerLoop> get_weak_ptr_of_time_loop() const override;
+    void addtimer_weakup() override;
 
     std::atomic_bool      running;
     Poller                poller;

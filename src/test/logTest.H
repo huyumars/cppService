@@ -41,7 +41,7 @@ TEST_F(LoggerTest,  coutStyleinfoTest){
 
 TEST_F(LoggerTest,  logLevelTest){
   LogINFO <<"INFO log"<<LogSend;
-  Logger::addDest("err","/var/tmp/err.log");
+  Logger::addDest("err",LogDest::Type::stderr);
   Logger::getDest("err").set_log_level(LogType::error);
   LogDEBUG<<"DEBUG log"<<LogSend;
   LogINFO <<"INFO log"<<LogSend;

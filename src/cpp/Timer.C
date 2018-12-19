@@ -68,8 +68,10 @@ void TimerMgr::processTimer() {
   }
 }
 
-const Timer & TimerMgr::topTimer() const {
-  return *(expireQueue.top());
+Timer::WPtr TimerMgr::topTimer() const {
+  if(expireQueue.size())
+    return (expireQueue.top());
+  else return Timer::WPtr();
 }
 
 const Timer & TimerMgr::getTimer(const std::string &name) const{
@@ -83,9 +85,23 @@ TimerLoop::TimerLoop()
 }
 
 int TimerLoop::timeout_for_next_events(){
-  if(_mgr->expireQueue.size()==0) return -1;
-  const Timer & top = _mgr->topTimer();
-  auto dur = top.expire() - std::chrono::system_clock::now();
-  return dur.count()*(1000) ;
+  if(_mgr->expireQueue.size()==0) return defaultTimeout;
+  auto  top = _mgr->topTimer().lock();
+  if(top){
+    auto dur = top->expire() - std::chrono::system_clock::now();
+    int timeout = dur.count()/(1000000) ;
+    return std::min(timeout,defaultTimeout);
+  }
+  else return defaultTimeout;
+}
+
+bool TimerLoop::need_weakup(const Timer & timer) const {
+  auto top = _mgr->topTimer().lock();
+  if(top){
+    if(top->expire() > timer.expire()) return true;
+    else return false;
+  }
+  //if no timer before need wake up
+  return true;
 }
 
