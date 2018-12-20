@@ -21,10 +21,12 @@ void _setupTestcase() {
 }
 
 
+
 TEST_F(TcpCSTest, TCPClientConnectionTest){
   //Logger::addDest("stdout",LogDest::Type::stdout); 
   //wait 1s to let server start;
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+ // std::this_thread::sleep_for(std::chrono::seconds(1));
+   TcpCSTest::server->waitForStart();
   ::MutiltiThreadTest(10,3,[](int thread_, int loop_)
       {
       try{

@@ -2,6 +2,8 @@
 #define TINYTCPSERVER
 
 
+#include <condition_variable>
+#include <mutex>
 #include "NetUtil.H"
 #include "NetLoop.H"
 #include "Socket.H"
@@ -13,12 +15,19 @@ class TinyTCPServer {
     TinyTCPServer(const std::string host, int port):
       _socket(Socket::SocketType::TCP),
       _addr(host,port){
-      }; 
+      };
+
+
+    void waitForStart(){
+      std::unique_lock<std::mutex> locker(start_mt);
+      start_cv.wait_for(locker,std::chrono::seconds(1));
+    }
 
     void run(){
       try{
       _netloopPtr = NetLoop::Factory::create();
       listen();
+      start_cv.notify_all();
       _netloopPtr->start();
       }
       catch(std::exception& ex){
@@ -131,6 +140,8 @@ class TinyTCPServer {
     std::unordered_map<Socket::SocketHandle, Socket>          clients;
     std::unordered_map<Socket::SocketHandle, NetChannel::Ptr> wchannels;
     std::unordered_map<Socket::SocketHandle, NetChannel::Ptr> echannels;
+    std::condition_variable start_cv;
+    std::mutex              start_mt;
 };
 
 
