@@ -2,28 +2,41 @@
 #define TCPLISTENER
 
 #include "Socket.H"
+#include "NetLoop.H"
 #include <functional>
 
-class TCPListerner{
+class TCPListener{
   public:
-    typedef std::function<void(const Socket &)> AcceptCallBack;
+    enum  class State: int{
+      invalid,
+      listen,
+      close,
+      error
+    };
+    typedef std::weak_ptr<NetLoop>  NetLoopWPtr;
+    typedef std::shared_ptr<NetChannel>  NetChannelPtr;
+    typedef std::function<void(Socket &&)> AcceptCallBack;
 
-    TCPListerner(const NetAddress &);
-    //copy
-    TCPListerner(const TCPListerner &) = default;
-    //move
-    TCPListerner(TCPListerner &&) = default;
-    virtual ~TCPListerner(){}
+    TCPListener(NetLoop::Ptr netloop, const NetAddress &);
+    TCPListener(const TCPListener &) = delete;
+    TCPListener(TCPListener &&) = delete;
 
-    int startlisten();
-    int valid() const;
-    void setAcceptCallBack(const AcceptCallBack & acb);
+    virtual ~TCPListener(){}
+
+    bool listen();
+    std::string name() const { return "listener";};
+    State state() const {return _state;}
+    void setAcceptCallBack(const AcceptCallBack & acb){_acb = acb;};
 
 
   private:
-    NetAddress addr;
-    Socket socket;
-    AcceptCallBack acb;
+    void acceptHandle(const NetChannel & nc);
+    State           _state;
+    NetLoopWPtr     _netloop;
+    NetAddress      _addr;
+    Socket          _socket;
+    AcceptCallBack  _acb;
+    NetChannelPtr   _listenChannel;
 };
 
 

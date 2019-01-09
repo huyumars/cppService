@@ -7,17 +7,12 @@
 
 
 std::shared_ptr<TinyTCPServer> TcpCSTest::server=std::shared_ptr<TinyTCPServer>();
-std::thread                    TcpCSTest::serverrunner=std::thread();
 
 
 
 void _setupTestcase() {
   TcpCSTest::server = std::make_shared<TinyTCPServer>("127.0.0.1", 8888);
-  TcpCSTest::serverrunner =std::thread(
-    [](){
-    TcpCSTest::server->run();
-    LogINFO<<"server will close now "<<LogSend;
-  });
+  TcpCSTest::server->start();
 }
 
 
@@ -26,7 +21,6 @@ TEST_F(TcpCSTest, TCPClientConnectionTest){
   //Logger::addDest("stdout",LogDest::Type::stdout); 
   //wait 1s to let server start;
  // std::this_thread::sleep_for(std::chrono::seconds(1));
-   TcpCSTest::server->waitForStart();
   ::MutiltiThreadTest(10,3,[](int thread_, int loop_)
       {
       try{
@@ -61,15 +55,15 @@ TEST_F(TcpCSTest, NetLoopWakeUpTest){
   EXPECT_CALL(tcb,val(::testing::Eq(1)));
   EXPECT_CALL(tcb,val(::testing::Eq(2)));
   EXPECT_CALL(tcb,val(::testing::Eq(3)));
-  server->wakeUp([&tcb](const NetLoop &){
+  server->netloop()->asyncWakeUp([&tcb](const NetLoop &){
       LogINFO<<"wakeup trigger 1"<<LogSend;
       tcb.val(1);
   });
-  server->wakeUp([&tcb](const NetLoop &){
+  server->netloop()->asyncWakeUp([&tcb](const NetLoop &){
       LogINFO<<"wakeup trigger 2"<<LogSend;
       tcb.val(2);
   });
-  server->wakeUp([&tcb](const NetLoop &){
+  server->netloop()->asyncWakeUp([&tcb](const NetLoop &){
       LogINFO<<"wakeup trigger 3"<<LogSend;
       tcb.val(3);
   });
@@ -82,12 +76,12 @@ TEST_F(TcpCSTest, NetLoopTimerTest){
   ::testing::Sequence  seq;
   EXPECT_CALL(tcb,val(::testing::Eq(1))).InSequence(seq);
   EXPECT_CALL(tcb,val(::testing::Eq(2))).InSequence(seq);
-  server->_netloopPtr->addTimerT<Timer>("t1",std::chrono::milliseconds(100),[&tcb](const Timer &){
+  server->netloop()->addTimerT<Timer>("t1",std::chrono::milliseconds(100),[&tcb](const Timer &){
       LogINFO<<"timer trigger for 100ms"<<LogSend;
       tcb.val(2);
   });
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  server->_netloopPtr->addTimerT<Timer>("t2",std::chrono::milliseconds(50),[&tcb](const Timer &){
+  server->netloop()->addTimerT<Timer>("t2",std::chrono::milliseconds(50),[&tcb](const Timer &){
       LogINFO<<"timer trigger for 50ms"<<LogSend;
       tcb.val(1);
   });
@@ -95,8 +89,7 @@ TEST_F(TcpCSTest, NetLoopTimerTest){
 }
 
 TEST_F(TcpCSTest, NetLoopServerCloseTest){
-  server->asyncStop(); 
-  serverrunner.join();
+  server->stop(); 
   //never left static object
   //which might call logger function
   server.reset();

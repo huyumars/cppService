@@ -5,7 +5,10 @@
 #include <condition_variable>
 #include <mutex>
 #include "NetUtil.H"
+
 #include "NetLoop.H"
+#include "NetLoopThread.H"
+#include "TCPListener.H"
 #include "Socket.H"
 #include "NetChannel.H"
 #include "Logger.H"
@@ -13,45 +16,23 @@
 class TinyTCPServer {
   public:
     TinyTCPServer(const std::string host, int port):
-      _socket(Socket::SocketType::TCP),
       _addr(host,port){
       };
 
-
-    void waitForStart(){
-      std::unique_lock<std::mutex> locker(start_mt);
-      start_cv.wait_for(locker,std::chrono::seconds(1));
-    }
-
-    void run(){
-      try{
-      _netloopPtr = NetLoop::Factory::create();
+    void start(){
+      netloopthread.start();
+      listener = std::make_shared<TCPListener>(netloop(),_addr);
       listen();
-      start_cv.notify_all();
-      _netloopPtr->start();
-      }
-      catch(std::exception& ex){
-         LogERROR<<ex.what()<<LogSend;
-      }
     }
-    void asyncStop(){
-      try{
-      _netloopPtr->asyncStop();
-      }
-      catch(std::exception&ex){
-         LogERROR<<ex.what()<<LogSend;
-      }
+    void stop(){
+      netloopthread.stop();
     }
-    void wakeUp(const NetLoop::WakeUpCB &cb){
-      try{
-      _netloopPtr->asyncWakeUp(cb);
-      }
-      catch(std::exception&ex){
-         LogERROR<<ex.what()<<LogSend;
-      }
+    NetLoop::Ptr  netloop() const {return netloopthread.netloop();}
+    ~TinyTCPServer(){
+      netloopthread.join();
     }
 
- //private:
+ private:
     void recv(const Socket &client){
       static char buffer[1024];
       memset(buffer, 0 ,sizeof(buffer));
@@ -87,7 +68,7 @@ class TinyTCPServer {
       if(!client.valid()) return;
       client.setNonBlocking();
       Socket::SocketHandle fd = client.handler();
-      rchannels[fd]= NetChannel::Factory::create(_netloopPtr,
+      rchannels[fd]= NetChannel::Factory::create(netloop(),
           client.handler(),
           NetChannel::Type::Read,
           "clientr",
@@ -95,7 +76,7 @@ class TinyTCPServer {
           recv(client);
           });
       rchannels[fd]->enable();
-      wchannels[fd]= NetChannel::Factory::create(_netloopPtr,
+      wchannels[fd]= NetChannel::Factory::create(netloop(),
           client.handler(),
           NetChannel::Type::Write,
           "clientw",
@@ -103,7 +84,7 @@ class TinyTCPServer {
           send(client);
           //if not enable won't trigger
           });
-      echannels[fd]= NetChannel::Factory::create(_netloopPtr,
+      echannels[fd]= NetChannel::Factory::create(netloop(),
           client.handler(),
           NetChannel::Type::Error,
           "cliente",
@@ -115,33 +96,22 @@ class TinyTCPServer {
       echannels[fd]->enable();
     }
     void listen(){
-      _socket.bind(_addr);
-      _socket.listen();
-      _socket.setNonBlocking();
-      listenChannel = NetChannel::Factory::create(_netloopPtr,
-          _socket.handler(),
-          NetChannel::Type::Read,
-          "tinyserverListener",
-          [this](const NetChannel& nc){
-          auto clientSocket = _socket.accept();
+      listener->setAcceptCallBack(
+          [this](Socket&& clientSocket){
           auto fd = clientSocket.handler();
-          LogINFO<<"get connection , and open"<<fd<<LogSend;
           clients[fd]=std::move(clientSocket);
           connect(clients[fd]);
           });
-      listenChannel->enable();
+      listener->listen();
     }
-    Socket     _socket;
     NetAddress _addr;
-    NetLoop::Ptr   _netloopPtr;
-    NetChannel::Ptr   listenChannel;
+    NetLoopThread     netloopthread;
+    std::shared_ptr<TCPListener>       listener;
     std::unordered_map<Socket::SocketHandle, NetChannel::Ptr> rchannels;
     std::unordered_map<Socket::SocketHandle, std::string>     clientData;
     std::unordered_map<Socket::SocketHandle, Socket>          clients;
     std::unordered_map<Socket::SocketHandle, NetChannel::Ptr> wchannels;
     std::unordered_map<Socket::SocketHandle, NetChannel::Ptr> echannels;
-    std::condition_variable start_cv;
-    std::mutex              start_mt;
 };
 
 
