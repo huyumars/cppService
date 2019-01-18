@@ -14,3 +14,6 @@ NetAddress::NetAddress(const std::string & host, unsigned int port):
 NetAddress::NetAddress(){
   memset(&_data, 0, sizeof(_data));
 }
+
+
+

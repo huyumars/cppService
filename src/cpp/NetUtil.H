@@ -31,4 +31,5 @@ class NetException:public StringException {
     NetException(const std::string&msg_):StringException("[NetException]"+msg_){}
 };
 
+
 #endif
